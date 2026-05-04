@@ -6,6 +6,7 @@
 <title>IoT Monitoring</title>
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
@@ -14,8 +15,6 @@ body {
     margin: 0;
     color: white;
     text-align: center;
-
-    /* 🔥 GANTI WALLPAPER (AMAN UNTUK HOSTING) */
     background: url('https://images.unsplash.com/photo-1518770660439-4636190af475') no-repeat center center fixed;
     background-size: cover;
 }
@@ -39,7 +38,7 @@ body::before {
 }
 
 .container {
-    max-width: 520px;
+    max-width: 900px;
     margin: auto;
     padding: 20px;
 }
@@ -71,14 +70,40 @@ body::before {
 .icon { font-size: 20px; }
 .value { font-size: 24px; font-weight: bold; }
 
+/* CARD */
 .card {
+    position: relative;
     background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(18px);
     border-radius: 18px;
     padding: 15px;
     margin: 12px 0;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+        inset 0 0 10px rgba(255,255,255,0.05),
+        0 0 15px rgba(0,255,200,0.15),
+        0 0 30px rgba(0,255,200,0.08);
+    transition: 0.3s;
 }
 
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: linear-gradient(120deg, rgba(255,255,255,0.15), transparent 40%);
+    opacity: 0.4;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow:
+        inset 0 0 12px rgba(255,255,255,0.08),
+        0 0 20px rgba(0,255,200,0.4),
+        0 0 40px rgba(0,255,200,0.2);
+}
+
+/* BUTTON */
 button {
     position: relative;
     padding: 10px;
@@ -88,29 +113,47 @@ button {
     cursor: pointer;
     font-weight: bold;
     overflow: hidden;
-    transition: 0.2s;
 }
 
-.manual { background: orange; }
-.auto { background: #00c853; }
-.reset { background: red; }
+/* 🔥 WARNA */
+.manual { background: linear-gradient(145deg, #ff9800, #ff6f00); }
+.auto { background: linear-gradient(145deg, #00e676, #00c853); }
+.reset { background: linear-gradient(145deg, #ff5252, #d50000); }
 
 .card button { width: 45%; }
 
 button:hover {
     transform: scale(1.07);
-    box-shadow: 0 0 12px rgba(255,255,255,0.5),
-                0 0 20px rgba(0,255,200,0.7);
 }
 
-button:active { transform: scale(0.95); }
+/* 🔥 GLOSSY SHINE (INI FIX UTAMA) */
+button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        rgba(255,255,255,0.7),
+        rgba(255,255,255,0.2),
+        transparent
+    );
+    transform: skewX(-25deg);
+}
 
+button:hover::before {
+    left: 130%;
+    transition: 0.6s;
+}
+
+/* RIPPLE */
 button::after {
     content: "";
     position: absolute;
     width: 0;
     height: 0;
-    background: rgba(255,255,255,0.5);
     border-radius: 50%;
     top: 50%;
     left: 50%;
@@ -118,26 +161,42 @@ button::after {
     opacity: 0;
 }
 
+.manual::after { background: rgba(255,165,0,0.6); }
+.auto::after { background: rgba(0,255,120,0.6); }
+.reset::after { background: rgba(255,0,0,0.6); }
+
 button:active::after {
     width: 120px;
     height: 120px;
     opacity: 1;
-    transition: 0.4s;
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-    100% { transform: scale(1); }
+/* RGB RESET */
+@keyframes rgbGlow {
+    0% { box-shadow: 0 0 10px red; }
+    50% { box-shadow: 0 0 20px cyan; }
+    100% { box-shadow: 0 0 10px magenta; }
 }
 
-.hot { animation: pulse 0.6s infinite; }
+.rgb {
+    animation: rgbGlow 2s linear infinite;
+}
+
+/* CHART */
+canvas {
+    margin-top: 10px;
+    transition: 0.3s;
+}
 
 .footer {
     margin-top: 20px;
-    padding: 10px;
     font-size: 12px;
     color: #ccc;
+}
+
+.layout-row {
+    display: flex;
+    gap: 15px;
 }
 
 </style>
@@ -152,23 +211,19 @@ button:active::after {
 <div id="status" class="status offline">● Offline</div>
 
 <div class="sensor-row">
-    <div class="sensor">
-        <div class="icon">🌡</div>
-        <div id="suhu" class="value">--</div>
-    </div>
-
-    <div class="sensor">
-        <div class="icon">💧</div>
-        <div id="hum" class="value">--</div>
-    </div>
-
-    <div class="sensor">
-        <div class="icon">💡</div>
-        <div id="ldr" class="value">--</div>
-    </div>
+    <div class="sensor"><div class="icon">🌡</div><div id="suhu" class="value">--</div></div>
+    <div class="sensor"><div class="icon">💧</div><div id="hum" class="value">--</div></div>
+    <div class="sensor"><div class="icon">💡</div><div id="ldr" class="value">--</div></div>
 </div>
 
-<div class="card">
+<div class="layout-row">
+
+<div class="card" style="flex:1;">
+<h3>Grafik Sensor</h3>
+<canvas id="chart"></canvas>
+</div>
+
+<div class="card" style="flex:1;">
 <h3>Manual Control</h3>
 
 <button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
@@ -183,7 +238,9 @@ button:active::after {
 <button class="manual" onclick="sendCmd('R4:1')">R4 ON</button>
 <button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
 
-<button class="reset" onclick="resetAll()">RESET ALL</button>
+<button class="reset rgb" onclick="resetAll()">RESET ALL</button>
+</div>
+
 </div>
 
 <div class="card">
@@ -194,16 +251,47 @@ button:active::after {
 
 </div>
 
-<div class="footer">© 2026 IoT Monitoring | Kelompok 8 🚀</div>
+<div class="footer">© 2026 IoT Monitoring</div>
 
 <script>
 
 const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
-// reconnect otomatis
-client.on("reconnect", () => {
-    document.getElementById("status").innerHTML = "● Reconnecting...";
+let labels = [];
+let suhuData = [];
+let humData = [];
+let ldrData = [];
+
+const ctx = document.getElementById("chart");
+
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [
+            { label: 'Suhu', data: suhuData, borderWidth: 2 },
+            { label: 'Kelembapan', data: humData, borderWidth: 2 },
+            { label: 'Cahaya', data: ldrData, borderWidth: 2 }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: { ticks: { color: "white" } },
+            y: { ticks: { color: "white" } }
+        },
+        plugins: {
+            legend: { labels: { color: "white" } }
+        }
+    }
 });
+
+/* CHART GLOW */
+function updateChartGlow(suhu) {
+    if (suhu < 28) ctx.style.boxShadow = "0 0 20px lime";
+    else if (suhu < 32) ctx.style.boxShadow = "0 0 25px yellow";
+    else ctx.style.boxShadow = "0 0 30px red";
+}
 
 client.on("connect", () => {
     document.getElementById("status").innerHTML = "● Online";
@@ -214,33 +302,38 @@ client.on("connect", () => {
     client.subscribe("smkn2klaten/kel-8/esp32/ldr");
 });
 
-client.on("close", () => {
-    document.getElementById("status").innerHTML = "● Offline";
-    document.getElementById("status").className = "status offline";
-});
-
 client.on("message", (topic, message) => {
-
     let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
 
-    if (topic.includes("suhu")) updateSuhu(parseFloat(msg));
-    if (topic.includes("kelembaban")) document.getElementById("hum").innerHTML = msg + "%";
-    if (topic.includes("ldr")) document.getElementById("ldr").innerHTML = msg;
-
-});
-
-function updateSuhu(suhu) {
-    let el = document.getElementById("suhu");
-    el.innerHTML = suhu + "°C";
-    el.classList.remove("hot");
-
-    if (suhu < 28) el.style.color = "lime";
-    else if (suhu < 32) el.style.color = "yellow";
-    else {
-        el.style.color = "red";
-        el.classList.add("hot");
+    if (labels.length > 10) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
     }
-}
+
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+        updateChartGlow(val);
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
+    chart.update();
+});
 
 function sendCmd(cmd) {
     client.publish("smkn2klaten/kel-8/esp32/control", cmd);
