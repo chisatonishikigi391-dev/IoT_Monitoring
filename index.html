@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IoT Monitoring</title>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    color: white;
+    text-align: center;
+
+    /* 🔥 GANTI WALLPAPER (AMAN UNTUK HOSTING) */
+    background: url('https://images.unsplash.com/photo-1518770660439-4636190af475') no-repeat center center fixed;
+    background-size: cover;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: -1;
+}
+
+.header {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    padding: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+}
+
+.container {
+    max-width: 520px;
+    margin: auto;
+    padding: 20px;
+}
+
+.status { font-size: 14px; margin-bottom: 10px; }
+.online { color: #00ff9c; }
+.offline { color: red; }
+
+.sensor-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.sensor {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    padding: 12px;
+    transition: 0.25s;
+}
+
+.sensor:hover {
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 0 0 20px rgba(0,255,200,0.6);
+}
+
+.icon { font-size: 20px; }
+.value { font-size: 24px; font-weight: bold; }
+
+.card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 18px;
+    padding: 15px;
+    margin: 12px 0;
+}
+
+button {
+    position: relative;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    overflow: hidden;
+    transition: 0.2s;
+}
+
+.manual { background: orange; }
+.auto { background: #00c853; }
+.reset { background: red; }
+
+.card button { width: 45%; }
+
+button:hover {
+    transform: scale(1.07);
+    box-shadow: 0 0 12px rgba(255,255,255,0.5),
+                0 0 20px rgba(0,255,200,0.7);
+}
+
+button:active { transform: scale(0.95); }
+
+button::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+button:active::after {
+    width: 120px;
+    height: 120px;
+    opacity: 1;
+    transition: 0.4s;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+
+.hot { animation: pulse 0.6s infinite; }
+
+.footer {
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">🌐 IoT Monitoring System</div>
+
+<div class="container">
+
+<div id="status" class="status offline">● Offline</div>
+
+<div class="sensor-row">
+    <div class="sensor">
+        <div class="icon">🌡</div>
+        <div id="suhu" class="value">--</div>
+    </div>
+
+    <div class="sensor">
+        <div class="icon">💧</div>
+        <div id="hum" class="value">--</div>
+    </div>
+
+    <div class="sensor">
+        <div class="icon">💡</div>
+        <div id="ldr" class="value">--</div>
+    </div>
+</div>
+
+<div class="card">
+<h3>Manual Control</h3>
+
+<button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
+<button class="manual" onclick="sendCmd('R1:0')">R1 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R2:1')">R2 ON</button>
+<button class="manual" onclick="sendCmd('R2:0')">R2 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R3:1')">R3 ON</button>
+<button class="manual" onclick="sendCmd('R3:0')">R3 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R4:1')">R4 ON</button>
+<button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
+
+<button class="reset" onclick="resetAll()">RESET ALL</button>
+</div>
+
+<div class="card">
+<h3>Mode</h3>
+<button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
+<button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
+</div>
+
+</div>
+
+<div class="footer">© 2026 IoT Monitoring | Kelompok 8 🚀</div>
+
+<script>
+
+const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
+
+// reconnect otomatis
+client.on("reconnect", () => {
+    document.getElementById("status").innerHTML = "● Reconnecting...";
+});
+
+client.on("connect", () => {
+    document.getElementById("status").innerHTML = "● Online";
+    document.getElementById("status").className = "status online";
+
+    client.subscribe("smkn2klaten/kel-8/esp32/suhu");
+    client.subscribe("smkn2klaten/kel-8/esp32/kelembaban");
+    client.subscribe("smkn2klaten/kel-8/esp32/ldr");
+});
+
+client.on("close", () => {
+    document.getElementById("status").innerHTML = "● Offline";
+    document.getElementById("status").className = "status offline";
+});
+
+client.on("message", (topic, message) => {
+
+    let msg = message.toString();
+
+    if (topic.includes("suhu")) updateSuhu(parseFloat(msg));
+    if (topic.includes("kelembaban")) document.getElementById("hum").innerHTML = msg + "%";
+    if (topic.includes("ldr")) document.getElementById("ldr").innerHTML = msg;
+
+});
+
+function updateSuhu(suhu) {
+    let el = document.getElementById("suhu");
+    el.innerHTML = suhu + "°C";
+    el.classList.remove("hot");
+
+    if (suhu < 28) el.style.color = "lime";
+    else if (suhu < 32) el.style.color = "yellow";
+    else {
+        el.style.color = "red";
+        el.classList.add("hot");
+    }
+}
+
+function sendCmd(cmd) {
+    client.publish("smkn2klaten/kel-8/esp32/control", cmd);
+}
+
+function resetAll() {
+    client.publish("smkn2klaten/kel-8/esp32/control","R1:0#R2:0#R3:0#R4:0");
+}
+
+</script>
+
+</body>
+</html>
