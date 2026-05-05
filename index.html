@@ -35,6 +35,7 @@ body::before {
     font-weight: bold;
     position: sticky;
     top: 0;
+    z-index: 99;
 }
 
 .container {
@@ -45,25 +46,22 @@ body::before {
 
 .status {
     font-size: 14px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
-.online {
-    color: #00ff9c;
-}
-
-.offline {
-    color: red;
-}
+.online { color: #00ff9c; }
+.offline { color: red; }
 
 .sensor-row {
     display: flex;
     gap: 12px;
     margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 
 .sensor {
     flex: 1;
+    min-width: 180px;
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(15px);
     border-radius: 16px;
@@ -85,7 +83,6 @@ body::before {
     font-weight: bold;
 }
 
-/* CARD */
 .card {
     position: relative;
     background: rgba(255,255,255,0.08);
@@ -101,24 +98,10 @@ body::before {
     transition: 0.3s;
 }
 
-.card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 18px;
-    background: linear-gradient(120deg, rgba(255,255,255,0.15), transparent 40%);
-    opacity: 0.4;
-}
-
 .card:hover {
     transform: translateY(-5px);
-    box-shadow:
-        inset 0 0 12px rgba(255,255,255,0.08),
-        0 0 20px rgba(0,255,200,0.4),
-        0 0 40px rgba(0,255,200,0.2);
 }
 
-/* BUTTON */
 button {
     position: relative;
     padding: 10px;
@@ -128,6 +111,8 @@ button {
     cursor: pointer;
     font-weight: bold;
     overflow: hidden;
+    color: white;
+    transition: 0.3s;
 }
 
 .manual {
@@ -190,11 +175,56 @@ canvas {
     margin-top: 20px;
     font-size: 12px;
     color: #ccc;
+    padding-bottom: 20px;
 }
 
 .layout-row {
     display: flex;
     gap: 15px;
+    flex-wrap: wrap;
+}
+
+.temp-info {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.temp-info span {
+    display: inline-block;
+    margin: 5px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.hijau {
+    background: rgba(0,255,0,0.2);
+    color: lime;
+}
+
+.kuning {
+    background: rgba(255,255,0,0.2);
+    color: yellow;
+}
+
+.merah {
+    background: rgba(255,0,0,0.2);
+    color: red;
+}
+
+@media(max-width:768px){
+
+    .layout-row{
+        flex-direction:column;
+    }
+
+    .card button{
+        width:100%;
+    }
+
+    .sensor-row{
+        flex-direction:column;
+    }
 }
 
 </style>
@@ -209,6 +239,7 @@ canvas {
 <div id="status" class="status offline">● Offline</div>
 
 <div class="sensor-row">
+
     <div class="sensor">
         <div class="icon">🌡</div>
         <div id="suhu" class="value">--</div>
@@ -223,45 +254,58 @@ canvas {
         <div class="icon">💡</div>
         <div id="ldr" class="value">--</div>
     </div>
+
+</div>
+
+<div class="temp-info">
+    <span class="hijau">20° - 25° = HIJAU</span>
+    <span class="kuning">26° - 30° = KUNING</span>
+    <span class="merah">31°+ = MERAH</span>
 </div>
 
 <div class="layout-row">
 
 <div class="card" style="flex:1;">
-    <h3>Grafik Sensor</h3>
-    <canvas id="chart"></canvas>
+<h3>Grafik Sensor</h3>
+<canvas id="chart"></canvas>
 </div>
 
 <div class="card" style="flex:1;">
-    <h3>Manual Control</h3>
 
-    <button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
-    <button class="manual" onclick="sendCmd('R1:0')">R1 OFF</button><br>
+<h3>Manual Control</h3>
 
-    <button class="manual" onclick="sendCmd('R2:1')">R2 ON</button>
-    <button class="manual" onclick="sendCmd('R2:0')">R2 OFF</button><br>
+<button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
+<button class="manual" onclick="sendCmd('R1:0')">R1 OFF</button><br>
 
-    <button class="manual" onclick="sendCmd('R3:1')">R3 ON</button>
-    <button class="manual" onclick="sendCmd('R3:0')">R3 OFF</button><br>
+<button class="manual" onclick="sendCmd('R2:1')">R2 ON</button>
+<button class="manual" onclick="sendCmd('R2:0')">R2 OFF</button><br>
 
-    <button class="manual" onclick="sendCmd('R4:1')">R4 ON</button>
-    <button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
+<button class="manual" onclick="sendCmd('R3:1')">R3 ON</button>
+<button class="manual" onclick="sendCmd('R3:0')">R3 OFF</button><br>
 
-    <button class="reset rgb" onclick="resetAll()">RESET</button>
+<button class="manual" onclick="sendCmd('R4:1')">R4 ON</button>
+<button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
+
+<button class="reset rgb" onclick="resetAll()">RESET</button>
+
 </div>
 
 </div>
 
 <div class="card">
-    <h3>Mode</h3>
 
-    <button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
-    <button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
+<h3>Mode</h3>
+
+<button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
+<button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
+
 </div>
 
 </div>
 
-<div class="footer">© 2026 IoT Monitoring/LiHaDa.id</div>
+<div class="footer">
+© 2026 IoT Monitoring/LiHaDa.id
+</div>
 
 <script>
 
@@ -272,53 +316,72 @@ let suhuData = [];
 let humData = [];
 let ldrData = [];
 
+const MAX_DATA = 50;
+
 const ctx = document.getElementById("chart");
 
 const chart = new Chart(ctx, {
+
     type: 'line',
 
     data: {
+
         labels: labels,
 
         datasets: [
+
             {
                 label: 'Suhu',
                 data: suhuData,
-                borderColor: 'lime',
-                backgroundColor: 'lime',
-                borderWidth: 2,
-                tension: 0.35
+                borderWidth: 3,
+                borderColor: "lime",
+                backgroundColor: "lime",
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6
             },
 
             {
                 label: 'Kelembapan',
                 data: humData,
-                borderColor: 'cyan',
-                backgroundColor: 'cyan',
                 borderWidth: 2,
-                tension: 0.35
+                borderColor: "cyan",
+                backgroundColor: "cyan",
+                tension: 0.4
             },
 
             {
                 label: 'Cahaya',
                 data: ldrData,
-                borderColor: 'orange',
-                backgroundColor: 'orange',
                 borderWidth: 2,
-                tension: 0.35
+                borderColor: "orange",
+                backgroundColor: "orange",
+                tension: 0.4
             }
+
         ]
     },
 
     options: {
+
         responsive: true,
 
         animation: {
-            duration: 500,
-            easing: 'linear'
+            duration: 700,
+            easing: 'easeInOutQuart'
+        },
+
+        plugins: {
+
+            legend: {
+                labels: {
+                    color: "white"
+                }
+            }
         },
 
         scales: {
+
             x: {
                 ticks: {
                     color: "white"
@@ -330,20 +393,11 @@ const chart = new Chart(ctx, {
                     color: "white"
                 }
             }
-        },
-
-        plugins: {
-            legend: {
-                labels: {
-                    color: "white"
-                }
-            }
         }
     }
 });
 
-
-/* 🔥 CHART GLOW */
+/* GLOW */
 function updateChartGlow(suhu) {
 
     if (suhu >= 20 && suhu <= 25) {
@@ -359,34 +413,38 @@ function updateChartGlow(suhu) {
     }
 }
 
-
-/* 🔥 WARNA GARIS DINAMIS */
+/* WARNA GARIS */
 function updateChartColor(suhu) {
 
+    let color = "white";
+
     if (suhu >= 20 && suhu <= 25) {
-        chart.data.datasets[0].borderColor = "lime";
-        chart.data.datasets[0].backgroundColor = "lime";
+        color = "lime";
     }
 
     else if (suhu >= 26 && suhu <= 30) {
-        chart.data.datasets[0].borderColor = "yellow";
-        chart.data.datasets[0].backgroundColor = "yellow";
+        color = "yellow";
     }
 
     else if (suhu >= 31) {
-        chart.data.datasets[0].borderColor = "red";
-        chart.data.datasets[0].backgroundColor = "red";
+        color = "red";
     }
+
+    chart.data.datasets[0].borderColor = color;
+    chart.data.datasets[0].backgroundColor = color;
 }
 
-
-/* 🔔 NOTIFIKASI */
+/* NOTIFIKASI */
 if (Notification.permission !== "granted") {
     Notification.requestPermission();
 }
 
 function playAlertSound() {
-    const audio = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
+
+    const audio = new Audio(
+        "https://www.soundjay.com/buttons/sounds/beep-07.mp3"
+    );
+
     audio.play();
 }
 
@@ -403,8 +461,11 @@ function cekSuhuAlert(suhu) {
         if (Notification.permission === "granted") {
 
             new Notification("🔥 SUHU TINGGI!", {
+
                 body: "Suhu mencapai " + suhu + "°C",
+
                 icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
+
             });
         }
 
@@ -412,70 +473,61 @@ function cekSuhuAlert(suhu) {
     }
 }
 
-
-/* 🔥 MQTT CONNECT */
+/* MQTT CONNECT */
 client.on("connect", () => {
 
     document.getElementById("status").innerHTML = "● Online";
     document.getElementById("status").className = "status online";
 
+    subscribeTopics();
+});
+
+/* AUTO RECONNECT */
+client.on("reconnect", () => {
+
+    console.log("Reconnect MQTT...");
+
+    subscribeTopics();
+});
+
+function subscribeTopics(){
+
     client.subscribe("smkn2klaten/kel-8/esp32/suhu");
     client.subscribe("smkn2klaten/kel-8/esp32/kelembaban");
     client.subscribe("smkn2klaten/kel-8/esp32/ldr");
-});
-
-
-/* 🔥 AUTO SCROLL */
-const MAX_DATA = 50;
-
-function autoScroll() {
-
-    while (labels.length > MAX_DATA) labels.shift();
-    while (suhuData.length > MAX_DATA) suhuData.shift();
-    while (humData.length > MAX_DATA) humData.shift();
-    while (ldrData.length > MAX_DATA) ldrData.shift();
 }
 
-
-/* 🔥 REALTIME MESSAGE */
+/* REALTIME DATA */
 client.on("message", (topic, message) => {
 
     let msg = message.toString();
-    let time = new Date().toLocaleTimeString();
 
     /* SUHU */
     if (topic.includes("suhu")) {
+
+        let time = new Date().toLocaleTimeString();
+
+        labels.push(time);
 
         let val = parseFloat(msg);
 
         document.getElementById("suhu").innerHTML = val + "°C";
 
-        labels.push(time);
         suhuData.push(val);
-
-        if (humData.length < suhuData.length) {
-            humData.push(null);
-        }
-
-        if (ldrData.length < suhuData.length) {
-            ldrData.push(null);
-        }
 
         updateChartGlow(val);
         updateChartColor(val);
         cekSuhuAlert(val);
     }
 
-    /* HUM */
+    /* KELEMBABAN */
     if (topic.includes("kelembaban")) {
 
-        let hum = parseFloat(msg);
+        document.getElementById("hum").innerHTML = msg + "%";
 
-        document.getElementById("hum").innerHTML = hum + "%";
+        humData.push(parseFloat(msg));
 
-        humData.push(hum);
-
-        while (humData.length < labels.length) {
+        while(humData.length < suhuData.length){
             humData.unshift(null);
         }
     }
@@ -483,24 +535,29 @@ client.on("message", (topic, message) => {
     /* LDR */
     if (topic.includes("ldr")) {
 
-        let ldr = parseFloat(msg);
+        document.getElementById("ldr").innerHTML = msg;
 
-        document.getElementById("ldr").innerHTML = ldr;
+        ldrData.push(parseFloat(msg));
 
-        ldrData.push(ldr);
-
-        while (ldrData.length < labels.length) {
+        while(ldrData.length < suhuData.length){
             ldrData.unshift(null);
         }
     }
 
-    autoScroll();
+    /* BATASI DATA */
+    if (labels.length > MAX_DATA) {
 
-    chart.update('active');
+        labels.shift();
+
+        if (suhuData.length > MAX_DATA) suhuData.shift();
+        if (humData.length > MAX_DATA) humData.shift();
+        if (ldrData.length > MAX_DATA) ldrData.shift();
+    }
+
+    chart.update();
 });
 
-
-/* 🔥 CONTROL */
+/* CONTROL */
 function sendCmd(cmd) {
 
     client.publish(
@@ -509,8 +566,6 @@ function sendCmd(cmd) {
     );
 }
 
-
-/* 🔥 RESET */
 function resetAll() {
 
     client.publish(
@@ -518,6 +573,27 @@ function resetAll() {
         "R1:0#R2:0#R3:0#R4:0"
     );
 }
+
+/* TRAIL EFFECT */
+const originalDraw = chart.draw;
+
+chart.draw = function() {
+
+    const c = this.ctx;
+
+    c.save();
+
+    c.shadowColor =
+        chart.data.datasets[0].borderColor || "lime";
+
+    c.shadowBlur = 15;
+
+    c.lineWidth = 2;
+
+    originalDraw.apply(this, arguments);
+
+    c.restore();
+};
 
 </script>
 
