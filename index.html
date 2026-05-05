@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+
 body {
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
@@ -24,17 +25,6 @@ body::before {
     inset: 0;
     background: rgba(0,0,0,0.6);
     z-index: -1;
-}
-
-/* 🔥 ALARM MERAH */
-@keyframes alarmFlash {
-    0% { background-color: rgba(255,0,0,0); }
-    50% { background-color: rgba(255,0,0,0.4); }
-    100% { background-color: rgba(255,0,0,0); }
-}
-
-.alarm {
-    animation: alarmFlash 0.8s infinite;
 }
 
 .header {
@@ -69,16 +59,139 @@ body::before {
     backdrop-filter: blur(15px);
     border-radius: 16px;
     padding: 12px;
+    transition: 0.25s;
 }
 
+.sensor:hover {
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 0 0 20px rgba(0,255,200,0.6);
+}
+
+.icon { font-size: 20px; }
 .value { font-size: 24px; font-weight: bold; }
 
+/* CARD */
 .card {
+    position: relative;
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(18px);
     border-radius: 18px;
     padding: 15px;
     margin: 12px 0;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+        inset 0 0 10px rgba(255,255,255,0.05),
+        0 0 15px rgba(0,255,200,0.15),
+        0 0 30px rgba(0,255,200,0.08);
+    transition: 0.3s;
+}
+
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: linear-gradient(120deg, rgba(255,255,255,0.15), transparent 40%);
+    opacity: 0.4;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow:
+        inset 0 0 12px rgba(255,255,255,0.08),
+        0 0 20px rgba(0,255,200,0.4),
+        0 0 40px rgba(0,255,200,0.2);
+}
+
+/* BUTTON */
+button {
+    position: relative;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    overflow: hidden;
+}
+
+/* 🔥 WARNA */
+.manual { background: linear-gradient(145deg, #ff9800, #ff6f00); }
+.auto { background: linear-gradient(145deg, #00e676, #00c853); }
+.reset { background: linear-gradient(145deg, #ff5252, #d50000); }
+
+.card button { width: 45%; }
+
+button:hover {
+    transform: scale(1.07);
+}
+
+/* 🔥 GLOSSY SHINE (INI FIX UTAMA) */
+button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        rgba(255,255,255,0.7),
+        rgba(255,255,255,0.2),
+        transparent
+    );
+    transform: skewX(-25deg);
+}
+
+button:hover::before {
+    left: 130%;
+    transition: 0.6s;
+}
+
+/* RIPPLE */
+button::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+.manual::after { background: rgba(255,165,0,0.6); }
+.auto::after { background: rgba(0,255,120,0.6); }
+.reset::after { background: rgba(255,0,0,0.6); }
+
+button:active::after {
+    width: 120px;
+    height: 120px;
+    opacity: 1;
+}
+
+/* RGB RESET */
+@keyframes rgbGlow {
+    0% { box-shadow: 0 0 10px red; }
+    50% { box-shadow: 0 0 20px cyan; }
+    100% { box-shadow: 0 0 10px magenta; }
+}
+
+.rgb {
+    animation: rgbGlow 2s linear infinite;
+}
+
+/* CHART */
+canvas {
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.footer {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #ccc;
 }
 
 .layout-row {
@@ -86,9 +199,6 @@ body::before {
     gap: 15px;
 }
 
-canvas {
-    margin-top: 10px;
-}
 </style>
 </head>
 
@@ -101,29 +211,56 @@ canvas {
 <div id="status" class="status offline">● Offline</div>
 
 <div class="sensor-row">
-    <div class="sensor"><div>🌡</div><div id="suhu" class="value">--</div></div>
-    <div class="sensor"><div>💧</div><div id="hum" class="value">--</div></div>
-    <div class="sensor"><div>💡</div><div id="ldr" class="value">--</div></div>
+    <div class="sensor"><div class="icon">🌡</div><div id="suhu" class="value">--</div></div>
+    <div class="sensor"><div class="icon">💧</div><div id="hum" class="value">--</div></div>
+    <div class="sensor"><div class="icon">💡</div><div id="ldr" class="value">--</div></div>
 </div>
 
 <div class="layout-row">
+
 <div class="card" style="flex:1;">
 <h3>Grafik Sensor</h3>
 <canvas id="chart"></canvas>
 </div>
+
+<div class="card" style="flex:1;">
+<h3>Manual Control</h3>
+
+<button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
+<button class="manual" onclick="sendCmd('R1:0')">R1 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R2:1')">R2 ON</button>
+<button class="manual" onclick="sendCmd('R2:0')">R2 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R3:1')">R3 ON</button>
+<button class="manual" onclick="sendCmd('R3:0')">R3 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R4:1')">R4 ON</button>
+<button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
+
+<button class="reset rgb" onclick="resetAll()">RESET</button>
 </div>
 
 </div>
+
+<div class="card">
+<h3>Mode</h3>
+<button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
+<button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
+</div>
+
+</div>
+
+<div class="footer">© 2026 IoT Monitoring/LiHaDa.id</div>
 
 <script>
+
 const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
 let labels = [];
 let suhuData = [];
 let humData = [];
 let ldrData = [];
-
-const MAX_DATA = 20;
 
 const ctx = document.getElementById("chart");
 
@@ -139,14 +276,6 @@ const chart = new Chart(ctx, {
     },
     options: {
         responsive: true,
-        animation: {
-            duration: 600,
-            easing: 'linear'
-        },
-        elements: {
-            line: { tension: 0.35 },
-            point: { radius: 2 }
-        },
         scales: {
             x: { ticks: { color: "white" } },
             y: { ticks: { color: "white" } }
@@ -157,29 +286,13 @@ const chart = new Chart(ctx, {
     }
 });
 
-/* 🔥 TRAIL EFFECT */
-const originalDraw = chart.draw;
-chart.draw = function() {
-    const ctx = this.ctx;
-    ctx.save();
-    ctx.shadowColor = chart.data.datasets[0].borderColor || "lime";
-    ctx.shadowBlur = 15;
-    originalDraw.apply(this, arguments);
-    ctx.restore();
-};
-
-/* 🔔 NOTIF */
-if (Notification.permission !== "granted") {
-    Notification.requestPermission();
+/* CHART GLOW */
+function updateChartGlow(suhu) {
+    if (suhu < 28) ctx.style.boxShadow = "0 0 20px lime";
+    else if (suhu < 32) ctx.style.boxShadow = "0 0 25px yellow";
+    else ctx.style.boxShadow = "0 0 30px red";
 }
 
-let lastAlert = 0;
-
-function playSound() {
-    new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3").play();
-}
-
-/* 🔥 MAIN LOGIC */
 client.on("connect", () => {
     document.getElementById("status").innerHTML = "● Online";
     document.getElementById("status").className = "status online";
@@ -193,38 +306,20 @@ client.on("message", (topic, message) => {
     let msg = message.toString();
     let time = new Date().toLocaleTimeString();
 
+    if (labels.length > 10) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+
     labels.push(time);
 
     if (topic.includes("suhu")) {
         let val = parseFloat(msg);
         document.getElementById("suhu").innerHTML = val + "°C";
         suhuData.push(val);
-
-        /* 🔥 WARNA DINAMIS */
-        let color = val < 28 ? "lime" : val < 32 ? "yellow" : "red";
-        chart.data.datasets[0].borderColor = color;
-
-        /* 🔥 GLOW */
-        ctx.style.boxShadow = `0 0 25px ${color}`;
-
-        /* 🔥 ALARM */
-        if (val >= 31) {
-            document.body.classList.add("alarm");
-
-            if (Date.now() - lastAlert > 10000) {
-                lastAlert = Date.now();
-
-                if (Notification.permission === "granted") {
-                    new Notification("🔥 SUHU TINGGI!", {
-                        body: "Suhu " + val + "°C"
-                    });
-                }
-
-                playSound();
-            }
-        } else {
-            document.body.classList.remove("alarm");
-        }
+        updateChartGlow(val);
     }
 
     if (topic.includes("kelembaban")) {
@@ -237,17 +332,351 @@ client.on("message", (topic, message) => {
         ldrData.push(parseFloat(msg));
     }
 
-    /* 🔥 AUTO SCROLL */
-    if (labels.length > MAX_DATA) {
+    chart.update();
+});
+
+function sendCmd(cmd) {
+    client.publish("smkn2klaten/kel-8/esp32/control", cmd);
+}
+
+function resetAll() {
+    client.publish("smkn2klaten/kel-8/esp32/control","R1:0#R2:0#R3:0#R4:0");
+}
+
+</script>
+
+    <!-- TAMBAHAN SCRIPT (letakkan DI BAWAH script kamu, jangan ubah kode awal) -->
+
+<script>
+
+/* 🔥 WARNA GARIS DINAMIS */
+function updateChartColor(suhu) {
+    let color;
+
+    if (suhu >= 20 && suhu <= 25) {
+        color = "lime";
+    } else if (suhu >= 26 && suhu <= 30) {
+        color = "yellow";
+    } else if (suhu >= 31) {
+        color = "red";
+    } else {
+        color = "white";
+    }
+
+    chart.data.datasets[0].borderColor = color;
+    chart.data.datasets[0].backgroundColor = color;
+
+    chart.update();
+}
+
+/* 🔥 OVERRIDE MESSAGE HANDLER TANPA MENGUBAH KODE AWAL */
+const oldMessageHandler = client.listeners("message")[0];
+
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+    let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
+
+    if (labels.length > 10) {
         labels.shift();
         suhuData.shift();
         humData.shift();
         ldrData.shift();
     }
 
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+
+        updateChartGlow(val);   // glow chart
+        updateChartColor(val);  // 🔥 warna garis ikut berubah
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
     chart.update();
 });
+
+</script>
+
+    <script>
+
+/* 🔔 MINTA IZIN NOTIFIKASI */
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+/* 🔊 SOUND ALERT */
+function playAlertSound() {
+    const audio = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
+    audio.play();
+}
+
+/* 🔥 NOTIFIKASI SUHU */
+let lastAlert = 0;
+
+function cekSuhuAlert(suhu) {
+    let now = Date.now();
+
+    if (suhu >= 31 && now - lastAlert > 10000) { // delay 10 detik biar gak spam
+        lastAlert = now;
+
+        // popup notif
+        if (Notification.permission === "granted") {
+            new Notification("🔥 SUHU TINGGI!", {
+                body: "Suhu mencapai " + suhu + "°C",
+                icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
+            });
+        }
+
+        // bunyi
+        playAlertSound();
+    }
+}
+
+/* 🔥 SUNTIK KE DATA SUHU TANPA UBAH KODE AWAL */
+const oldMsgHandler = client.listeners("message")[0];
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+    let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
+
+    if (labels.length > 10) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+
+        cekSuhuAlert(val); // 🔥 notif aktif di sini
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
+    chart.update();
+});
+
+</script>
+
+    <script>
+
+/* 🔥 SMOOTH CHART ANIMATION */
+chart.options.animation = {
+    duration: 800,   // lama animasi (ms)
+    easing: 'easeInOutQuart'
+};
+
+chart.options.elements = {
+    line: {
+        tension: 0.4   // bikin garis jadi melengkung halus
+    },
+    point: {
+        radius: 3,
+        hoverRadius: 6
+    }
+};
+
+chart.options.transitions = {
+    active: {
+        animation: {
+            duration: 400
+        }
+    }
+};
+
+chart.update();
+
+</script>
+
+    <script>
+
+/* =========================
+   🔥 1. REALTIME SMOOTH UPDATE
+========================= */
+let smoothTimer = null;
+
+function smoothUpdateChart() {
+    if (smoothTimer) cancelAnimationFrame(smoothTimer);
+
+    function animate() {
+        chart.update('none'); // update tanpa flicker
+        smoothTimer = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // stop setelah 500ms biar hemat
+    setTimeout(() => {
+        cancelAnimationFrame(smoothTimer);
+    }, 500);
+}
+
+
+/* =========================
+   🔥 2. TRAIL EFFECT (JEJAK GARIS)
+========================= */
+const originalDraw = chart.draw;
+
+chart.draw = function() {
+    const ctx = this.ctx;
+
+    ctx.save();
+    ctx.shadowColor = chart.data.datasets[0].borderColor || "lime";
+    ctx.shadowBlur = 15;   // kekuatan glow
+    ctx.lineWidth = 2;
+
+    originalDraw.apply(this, arguments);
+
+    ctx.restore();
+};
+
+
+/* =========================
+   🔥 SUNTIK TANPA UBAH KODE AWAL
+========================= */
+const oldHandler = client.listeners("message")[0];
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+    let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
+
+    if (labels.length > 10) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+        cekSuhuAlert(val);
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
+    smoothUpdateChart(); // 🔥 pake smooth update, bukan langsung update
+});
+
+</script>
+
+    <script>
+
+/* =========================
+   🔥 AUTO SCROLL WINDOW DATA
+========================= */
+const MAX_DATA = 20; // jumlah titik yang tampil
+
+function autoScroll() {
+    if (labels.length > MAX_DATA) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+}
+
+
+/* =========================
+   🔥 ANIMASI SCROLL HALUS
+========================= */
+chart.options.animation = {
+    duration: 600,
+    easing: 'linear'
+};
+
+chart.options.elements = {
+    line: {
+        tension: 0.35
+    }
+};
+
+
+/* =========================
+   🔥 OVERRIDE MESSAGE (TANPA UBAH KODE AWAL)
+========================= */
+const oldHandlerScroll = client.listeners("message")[0];
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+    let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
+
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+        cekSuhuAlert(val);
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
+    autoScroll();   // 🔥 geser data otomatis
+    chart.update(); // update chart
+});
+
 </script>
 
 </body>
 </html>
+
+langsung di gabung ke kodingan ku biar tinggan ganti 
