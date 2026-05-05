@@ -518,5 +518,125 @@ function resetAll() {
 
 </script>
 
+    <script>
+
+/* =========================
+   🔥 AUTO SCROLL WINDOW DATA
+========================= */
+const MAX_DATA = 50;
+
+function autoScroll() {
+    if (labels.length > MAX_DATA) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+}
+
+/* =========================
+   🔥 ANIMASI SCROLL HALUS
+========================= */
+chart.options.animation = {
+    duration: 600,
+    easing: 'linear'
+};
+
+chart.options.elements = {
+    line: {
+        tension: 0.35
+    },
+    point: {
+        radius: 3,
+        hoverRadius: 5
+    }
+};
+
+/* =========================
+   🔥 STYLE DATASET
+========================= */
+chart.data.datasets[0].borderColor = "yellow";
+chart.data.datasets[0].backgroundColor = "yellow";
+
+chart.data.datasets[1].borderColor = "cyan";
+chart.data.datasets[1].backgroundColor = "cyan";
+
+chart.data.datasets[2].borderColor = "orange";
+chart.data.datasets[2].backgroundColor = "orange";
+
+chart.data.datasets.forEach(ds => {
+    ds.fill = false;
+    ds.tension = 0.35;
+});
+
+/* =========================
+   🔥 REALTIME MESSAGE FINAL
+========================= */
+
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+
+    let msg = message.toString().trim();
+    let time = new Date().toLocaleTimeString();
+
+    labels.push(time);
+
+    /* ===== SUHU ===== */
+    if (topic.includes("suhu")) {
+
+        let val = parseFloat(msg);
+
+        if (!isNaN(val)) {
+
+            document.getElementById("suhu").innerHTML = val + "°C";
+
+            suhuData.push(val);
+
+            updateChartGlow(val);
+            updateChartColor(val);
+            cekSuhuAlert(val);
+        }
+    }
+
+    /* ===== KELEMBABAN ===== */
+    if (topic.includes("kelembaban")) {
+
+        let val = parseFloat(msg);
+
+        if (!isNaN(val)) {
+
+            document.getElementById("hum").innerHTML = val + "%";
+
+            humData.push(val);
+        }
+    }
+
+    /* ===== CAHAYA / LDR ===== */
+    if (topic.includes("ldr")) {
+
+        let val = parseFloat(msg);
+
+        if (!isNaN(val)) {
+
+            document.getElementById("ldr").innerHTML = val;
+
+            ldrData.push(val);
+
+        } else {
+
+            document.getElementById("ldr").innerHTML = "0";
+
+            ldrData.push(0);
+        }
+    }
+
+    autoScroll();
+
+    chart.update('active');
+});
+
+</script>
+
 </body>
 </html>
