@@ -345,5 +345,71 @@ function resetAll() {
 
 </script>
 
+    <!-- TAMBAHAN SCRIPT (letakkan DI BAWAH script kamu, jangan ubah kode awal) -->
+
+<script>
+
+/* 🔥 WARNA GARIS DINAMIS */
+function updateChartColor(suhu) {
+    let color;
+
+    if (suhu >= 20 && suhu <= 25) {
+        color = "lime";
+    } else if (suhu >= 26 && suhu <= 30) {
+        color = "yellow";
+    } else if (suhu >= 31) {
+        color = "red";
+    } else {
+        color = "white";
+    }
+
+    chart.data.datasets[0].borderColor = color;
+    chart.data.datasets[0].backgroundColor = color;
+
+    chart.update();
+}
+
+/* 🔥 OVERRIDE MESSAGE HANDLER TANPA MENGUBAH KODE AWAL */
+const oldMessageHandler = client.listeners("message")[0];
+
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+    let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
+
+    if (labels.length > 10) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+
+        updateChartGlow(val);   // glow chart
+        updateChartColor(val);  // 🔥 warna garis ikut berubah
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
+    chart.update();
+});
+
+</script>
+
 </body>
 </html>
