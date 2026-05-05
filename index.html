@@ -85,6 +85,7 @@ body::before {
     font-weight: bold;
 }
 
+/* CARD */
 .card {
     position: relative;
     background: rgba(255,255,255,0.08);
@@ -100,10 +101,24 @@ body::before {
     transition: 0.3s;
 }
 
-.card:hover {
-    transform: translateY(-5px);
+.card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: linear-gradient(120deg, rgba(255,255,255,0.15), transparent 40%);
+    opacity: 0.4;
 }
 
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow:
+        inset 0 0 12px rgba(255,255,255,0.08),
+        0 0 20px rgba(0,255,200,0.4),
+        0 0 40px rgba(0,255,200,0.2);
+}
+
+/* BUTTON */
 button {
     position: relative;
     padding: 10px;
@@ -135,6 +150,37 @@ button:hover {
     transform: scale(1.07);
 }
 
+button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        120deg,
+        rgba(255,255,255,0.7),
+        rgba(255,255,255,0.2),
+        transparent
+    );
+    transform: skewX(-25deg);
+}
+
+button:hover::before {
+    left: 130%;
+    transition: 0.6s;
+}
+
+@keyframes rgbGlow {
+    0% { box-shadow: 0 0 10px red; }
+    50% { box-shadow: 0 0 20px cyan; }
+    100% { box-shadow: 0 0 10px magenta; }
+}
+
+.rgb {
+    animation: rgbGlow 2s linear infinite;
+}
+
 canvas {
     margin-top: 10px;
     transition: 0.3s;
@@ -151,16 +197,6 @@ canvas {
     gap: 15px;
 }
 
-@keyframes rgbGlow {
-    0% { box-shadow: 0 0 10px red; }
-    50% { box-shadow: 0 0 20px cyan; }
-    100% { box-shadow: 0 0 10px magenta; }
-}
-
-.rgb {
-    animation: rgbGlow 2s linear infinite;
-}
-
 </style>
 </head>
 
@@ -173,7 +209,6 @@ canvas {
 <div id="status" class="status offline">● Offline</div>
 
 <div class="sensor-row">
-
     <div class="sensor">
         <div class="icon">🌡</div>
         <div id="suhu" class="value">--</div>
@@ -188,7 +223,6 @@ canvas {
         <div class="icon">💡</div>
         <div id="ldr" class="value">--</div>
     </div>
-
 </div>
 
 <div class="layout-row">
@@ -199,7 +233,6 @@ canvas {
 </div>
 
 <div class="card" style="flex:1;">
-
     <h3>Manual Control</h3>
 
     <button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
@@ -215,18 +248,15 @@ canvas {
     <button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
 
     <button class="reset rgb" onclick="resetAll()">RESET</button>
-
 </div>
 
 </div>
 
 <div class="card">
-
     <h3>Mode</h3>
 
     <button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
     <button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
-
 </div>
 
 </div>
@@ -245,14 +275,12 @@ let ldrData = [];
 const ctx = document.getElementById("chart");
 
 const chart = new Chart(ctx, {
-
     type: 'line',
 
     data: {
         labels: labels,
 
         datasets: [
-
             {
                 label: 'Suhu',
                 data: suhuData,
@@ -279,12 +307,10 @@ const chart = new Chart(ctx, {
                 borderWidth: 2,
                 tension: 0.35
             }
-
         ]
     },
 
     options: {
-
         responsive: true,
 
         animation: {
@@ -293,7 +319,6 @@ const chart = new Chart(ctx, {
         },
 
         scales: {
-
             x: {
                 ticks: {
                     color: "white"
@@ -305,24 +330,20 @@ const chart = new Chart(ctx, {
                     color: "white"
                 }
             }
-
         },
 
         plugins: {
-
             legend: {
                 labels: {
                     color: "white"
                 }
             }
-
         }
     }
-
 });
 
 
-/* CHART GLOW */
+/* 🔥 CHART GLOW */
 function updateChartGlow(suhu) {
 
     if (suhu >= 20 && suhu <= 25) {
@@ -339,40 +360,33 @@ function updateChartGlow(suhu) {
 }
 
 
-/* WARNA GARIS DINAMIS */
+/* 🔥 WARNA GARIS DINAMIS */
 function updateChartColor(suhu) {
 
     if (suhu >= 20 && suhu <= 25) {
-
         chart.data.datasets[0].borderColor = "lime";
         chart.data.datasets[0].backgroundColor = "lime";
     }
 
     else if (suhu >= 26 && suhu <= 30) {
-
         chart.data.datasets[0].borderColor = "yellow";
         chart.data.datasets[0].backgroundColor = "yellow";
     }
 
     else if (suhu >= 31) {
-
         chart.data.datasets[0].borderColor = "red";
         chart.data.datasets[0].backgroundColor = "red";
     }
 }
 
 
-/* NOTIFIKASI */
+/* 🔔 NOTIFIKASI */
 if (Notification.permission !== "granted") {
     Notification.requestPermission();
 }
 
 function playAlertSound() {
-
-    const audio = new Audio(
-        "https://www.soundjay.com/buttons/sounds/beep-07.mp3"
-    );
-
+    const audio = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
     audio.play();
 }
 
@@ -389,9 +403,7 @@ function cekSuhuAlert(suhu) {
         if (Notification.permission === "granted") {
 
             new Notification("🔥 SUHU TINGGI!", {
-
                 body: "Suhu mencapai " + suhu + "°C",
-
                 icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
             });
         }
@@ -401,44 +413,35 @@ function cekSuhuAlert(suhu) {
 }
 
 
-/* MQTT CONNECT */
+/* 🔥 MQTT CONNECT */
 client.on("connect", () => {
 
     document.getElementById("status").innerHTML = "● Online";
-
     document.getElementById("status").className = "status online";
 
     client.subscribe("smkn2klaten/kel-8/esp32/suhu");
-
     client.subscribe("smkn2klaten/kel-8/esp32/kelembaban");
-
     client.subscribe("smkn2klaten/kel-8/esp32/ldr");
 });
 
 
-/* AUTO SCROLL */
+/* 🔥 AUTO SCROLL */
 const MAX_DATA = 50;
 
 function autoScroll() {
 
     while (labels.length > MAX_DATA) labels.shift();
-
     while (suhuData.length > MAX_DATA) suhuData.shift();
-
     while (humData.length > MAX_DATA) humData.shift();
-
     while (ldrData.length > MAX_DATA) ldrData.shift();
 }
 
 
-/* REALTIME DATA */
+/* 🔥 REALTIME MESSAGE */
 client.on("message", (topic, message) => {
 
     let msg = message.toString();
-
     let time = new Date().toLocaleTimeString();
-
-    labels.push(time);
 
     /* SUHU */
     if (topic.includes("suhu")) {
@@ -447,21 +450,23 @@ client.on("message", (topic, message) => {
 
         document.getElementById("suhu").innerHTML = val + "°C";
 
+        labels.push(time);
         suhuData.push(val);
 
+        if (humData.length < suhuData.length) {
+            humData.push(null);
+        }
+
+        if (ldrData.length < suhuData.length) {
+            ldrData.push(null);
+        }
+
         updateChartGlow(val);
-
         updateChartColor(val);
-
         cekSuhuAlert(val);
-
-    } else {
-
-        suhuData.push(null);
     }
 
-
-    /* KELEMBABAN */
+    /* HUM */
     if (topic.includes("kelembaban")) {
 
         let hum = parseFloat(msg);
@@ -470,11 +475,10 @@ client.on("message", (topic, message) => {
 
         humData.push(hum);
 
-    } else {
-
-        humData.push(null);
+        while (humData.length < labels.length) {
+            humData.unshift(null);
+        }
     }
-
 
     /* LDR */
     if (topic.includes("ldr")) {
@@ -485,19 +489,18 @@ client.on("message", (topic, message) => {
 
         ldrData.push(ldr);
 
-    } else {
-
-        ldrData.push(null);
+        while (ldrData.length < labels.length) {
+            ldrData.unshift(null);
+        }
     }
 
     autoScroll();
 
     chart.update('active');
-
 });
 
 
-/* CONTROL */
+/* 🔥 CONTROL */
 function sendCmd(cmd) {
 
     client.publish(
@@ -507,7 +510,7 @@ function sendCmd(cmd) {
 }
 
 
-/* RESET */
+/* 🔥 RESET */
 function resetAll() {
 
     client.publish(
@@ -515,126 +518,6 @@ function resetAll() {
         "R1:0#R2:0#R3:0#R4:0"
     );
 }
-
-</script>
-
-    <script>
-
-/* =========================
-   🔥 AUTO SCROLL WINDOW DATA
-========================= */
-const MAX_DATA = 50;
-
-function autoScroll() {
-    if (labels.length > MAX_DATA) {
-        labels.shift();
-        suhuData.shift();
-        humData.shift();
-        ldrData.shift();
-    }
-}
-
-/* =========================
-   🔥 ANIMASI SCROLL HALUS
-========================= */
-chart.options.animation = {
-    duration: 600,
-    easing: 'linear'
-};
-
-chart.options.elements = {
-    line: {
-        tension: 0.35
-    },
-    point: {
-        radius: 3,
-        hoverRadius: 5
-    }
-};
-
-/* =========================
-   🔥 STYLE DATASET
-========================= */
-chart.data.datasets[0].borderColor = "yellow";
-chart.data.datasets[0].backgroundColor = "yellow";
-
-chart.data.datasets[1].borderColor = "cyan";
-chart.data.datasets[1].backgroundColor = "cyan";
-
-chart.data.datasets[2].borderColor = "orange";
-chart.data.datasets[2].backgroundColor = "orange";
-
-chart.data.datasets.forEach(ds => {
-    ds.fill = false;
-    ds.tension = 0.35;
-});
-
-/* =========================
-   🔥 REALTIME MESSAGE FINAL
-========================= */
-
-client.removeAllListeners("message");
-
-client.on("message", (topic, message) => {
-
-    let msg = message.toString().trim();
-    let time = new Date().toLocaleTimeString();
-
-    labels.push(time);
-
-    /* ===== SUHU ===== */
-    if (topic.includes("suhu")) {
-
-        let val = parseFloat(msg);
-
-        if (!isNaN(val)) {
-
-            document.getElementById("suhu").innerHTML = val + "°C";
-
-            suhuData.push(val);
-
-            updateChartGlow(val);
-            updateChartColor(val);
-            cekSuhuAlert(val);
-        }
-    }
-
-    /* ===== KELEMBABAN ===== */
-    if (topic.includes("kelembaban")) {
-
-        let val = parseFloat(msg);
-
-        if (!isNaN(val)) {
-
-            document.getElementById("hum").innerHTML = val + "%";
-
-            humData.push(val);
-        }
-    }
-
-    /* ===== CAHAYA / LDR ===== */
-    if (topic.includes("ldr")) {
-
-        let val = parseFloat(msg);
-
-        if (!isNaN(val)) {
-
-            document.getElementById("ldr").innerHTML = val;
-
-            ldrData.push(val);
-
-        } else {
-
-            document.getElementById("ldr").innerHTML = "0";
-
-            ldrData.push(0);
-        }
-    }
-
-    autoScroll();
-
-    chart.update('active');
-});
 
 </script>
 
