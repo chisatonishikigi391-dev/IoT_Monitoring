@@ -35,6 +35,7 @@ body::before {
     font-weight: bold;
     position: sticky;
     top: 0;
+    z-index: 99;
 }
 
 .container {
@@ -43,7 +44,11 @@ body::before {
     padding: 20px;
 }
 
-.status { font-size: 14px; margin-bottom: 10px; }
+.status {
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
 .online { color: #00ff9c; }
 .offline { color: red; }
 
@@ -51,10 +56,12 @@ body::before {
     display: flex;
     gap: 12px;
     margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 
 .sensor {
     flex: 1;
+    min-width: 180px;
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(15px);
     border-radius: 16px;
@@ -67,8 +74,14 @@ body::before {
     box-shadow: 0 0 20px rgba(0,255,200,0.6);
 }
 
-.icon { font-size: 20px; }
-.value { font-size: 24px; font-weight: bold; }
+.icon {
+    font-size: 20px;
+}
+
+.value {
+    font-size: 24px;
+    font-weight: bold;
+}
 
 /* CARD */
 .card {
@@ -91,7 +104,11 @@ body::before {
     position: absolute;
     inset: 0;
     border-radius: 18px;
-    background: linear-gradient(120deg, rgba(255,255,255,0.15), transparent 40%);
+    background: linear-gradient(
+        120deg,
+        rgba(255,255,255,0.15),
+        transparent 40%
+    );
     opacity: 0.4;
 }
 
@@ -113,20 +130,32 @@ button {
     cursor: pointer;
     font-weight: bold;
     overflow: hidden;
+    color: white;
+    transition: 0.3s;
 }
 
-/* 🔥 WARNA */
-.manual { background: linear-gradient(145deg, #ff9800, #ff6f00); }
-.auto { background: linear-gradient(145deg, #00e676, #00c853); }
-.reset { background: linear-gradient(145deg, #ff5252, #d50000); }
+/* WARNA */
+.manual {
+    background: linear-gradient(145deg, #ff9800, #ff6f00);
+}
 
-.card button { width: 45%; }
+.auto {
+    background: linear-gradient(145deg, #00e676, #00c853);
+}
+
+.reset {
+    background: linear-gradient(145deg, #ff5252, #d50000);
+}
+
+.card button {
+    width: 45%;
+}
 
 button:hover {
     transform: scale(1.07);
 }
 
-/* 🔥 GLOSSY SHINE (INI FIX UTAMA) */
+/* GLOSSY SHINE */
 button::before {
     content: "";
     position: absolute;
@@ -161,9 +190,17 @@ button::after {
     opacity: 0;
 }
 
-.manual::after { background: rgba(255,165,0,0.6); }
-.auto::after { background: rgba(0,255,120,0.6); }
-.reset::after { background: rgba(255,0,0,0.6); }
+.manual::after {
+    background: rgba(255,165,0,0.6);
+}
+
+.auto::after {
+    background: rgba(0,255,120,0.6);
+}
+
+.reset::after {
+    background: rgba(255,0,0,0.6);
+}
 
 button:active::after {
     width: 120px;
@@ -192,11 +229,62 @@ canvas {
     margin-top: 20px;
     font-size: 12px;
     color: #ccc;
+    padding-bottom: 20px;
 }
 
 .layout-row {
     display: flex;
     gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* STATUS SUHU */
+.temp-info {
+    margin-top: 15px;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.temp-info span {
+    display: inline-block;
+    margin: 5px;
+    padding: 8px 14px;
+    border-radius: 10px;
+}
+
+.hijau {
+    background: rgba(0,255,0,0.2);
+    color: lime;
+    border: 1px solid lime;
+}
+
+.kuning {
+    background: rgba(255,255,0,0.2);
+    color: yellow;
+    border: 1px solid yellow;
+}
+
+.merah {
+    background: rgba(255,0,0,0.2);
+    color: red;
+    border: 1px solid red;
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+
+    .layout-row{
+        flex-direction:column;
+    }
+
+    .card button{
+        width:100%;
+    }
+
+    .sensor-row{
+        flex-direction:column;
+    }
 }
 
 </style>
@@ -211,9 +299,28 @@ canvas {
 <div id="status" class="status offline">● Offline</div>
 
 <div class="sensor-row">
-    <div class="sensor"><div class="icon">🌡</div><div id="suhu" class="value">--</div></div>
-    <div class="sensor"><div class="icon">💧</div><div id="hum" class="value">--</div></div>
-    <div class="sensor"><div class="icon">💡</div><div id="ldr" class="value">--</div></div>
+
+    <div class="sensor">
+        <div class="icon">🌡</div>
+        <div id="suhu" class="value">--</div>
+    </div>
+
+    <div class="sensor">
+        <div class="icon">💧</div>
+        <div id="hum" class="value">--</div>
+    </div>
+
+    <div class="sensor">
+        <div class="icon">💡</div>
+        <div id="ldr" class="value">--</div>
+    </div>
+
+</div>
+
+<div class="temp-info">
+    <span class="hijau">20° - 25° = HIJAU</span>
+    <span class="kuning">26° - 30° = KUNING</span>
+    <span class="merah">31°+ = MERAH</span>
 </div>
 
 <div class="layout-row">
@@ -239,19 +346,24 @@ canvas {
 <button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
 
 <button class="reset rgb" onclick="resetAll()">RESET</button>
+
 </div>
 
 </div>
 
 <div class="card">
 <h3>Mode</h3>
+
 <button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
 <button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
-</div>
 
 </div>
 
-<div class="footer">© 2026 IoT Monitoring/LiHaDa.id</div>
+</div>
+
+<div class="footer">
+© 2026 IoT Monitoring/LiHaDa.id
+</div>
 
 <script>
 
@@ -262,38 +374,163 @@ let suhuData = [];
 let humData = [];
 let ldrData = [];
 
+const MAX_DATA = 50;
+
 const ctx = document.getElementById("chart");
 
 const chart = new Chart(ctx, {
     type: 'line',
+
     data: {
         labels: labels,
+
         datasets: [
-            { label: 'Suhu', data: suhuData, borderWidth: 2 },
-            { label: 'Kelembapan', data: humData, borderWidth: 2 },
-            { label: 'Cahaya', data: ldrData, borderWidth: 2 }
+
+            {
+                label: 'Suhu',
+                data: suhuData,
+                borderWidth: 3,
+                borderColor: "lime",
+                backgroundColor: "lime",
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6
+            },
+
+            {
+                label: 'Kelembapan',
+                data: humData,
+                borderWidth: 2,
+                borderColor: "cyan",
+                backgroundColor: "cyan",
+                tension: 0.4
+            },
+
+            {
+                label: 'Cahaya',
+                data: ldrData,
+                borderWidth: 2,
+                borderColor: "orange",
+                backgroundColor: "orange",
+                tension: 0.4
+            }
+
         ]
     },
+
     options: {
+
         responsive: true,
-        scales: {
-            x: { ticks: { color: "white" } },
-            y: { ticks: { color: "white" } }
+
+        animation: {
+            duration: 700,
+            easing: 'easeInOutQuart'
         },
+
+        scales: {
+
+            x: {
+                ticks: {
+                    color: "white"
+                }
+            },
+
+            y: {
+                ticks: {
+                    color: "white"
+                }
+            }
+        },
+
         plugins: {
-            legend: { labels: { color: "white" } }
+
+            legend: {
+                labels: {
+                    color: "white"
+                }
+            }
         }
     }
 });
 
 /* CHART GLOW */
 function updateChartGlow(suhu) {
-    if (suhu < 28) ctx.style.boxShadow = "0 0 20px lime";
-    else if (suhu < 32) ctx.style.boxShadow = "0 0 25px yellow";
-    else ctx.style.boxShadow = "0 0 30px red";
+
+    if (suhu >= 20 && suhu <= 25) {
+        ctx.style.boxShadow = "0 0 20px lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        ctx.style.boxShadow = "0 0 25px yellow";
+    }
+
+    else if (suhu >= 31) {
+        ctx.style.boxShadow = "0 0 30px red";
+    }
 }
 
+/* WARNA GARIS */
+function updateChartColor(suhu) {
+
+    let color = "white";
+
+    if (suhu >= 20 && suhu <= 25) {
+        color = "lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        color = "yellow";
+    }
+
+    else if (suhu >= 31) {
+        color = "red";
+    }
+
+    chart.data.datasets[0].borderColor = color;
+    chart.data.datasets[0].backgroundColor = color;
+}
+
+/* NOTIFIKASI */
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+function playAlertSound() {
+    const audio = new Audio(
+        "https://www.soundjay.com/buttons/sounds/beep-07.mp3"
+    );
+
+    audio.play();
+}
+
+let lastAlert = 0;
+
+function cekSuhuAlert(suhu) {
+
+    let now = Date.now();
+
+    if (suhu >= 31 && now - lastAlert > 10000) {
+
+        lastAlert = now;
+
+        if (Notification.permission === "granted") {
+
+            new Notification("🔥 SUHU TINGGI!", {
+
+                body: "Suhu mencapai " + suhu + "°C",
+
+                icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
+
+            });
+        }
+
+        playAlertSound();
+    }
+}
+
+/* MQTT CONNECT */
 client.on("connect", () => {
+
     document.getElementById("status").innerHTML = "● Online";
     document.getElementById("status").className = "status online";
 
@@ -302,377 +539,89 @@ client.on("connect", () => {
     client.subscribe("smkn2klaten/kel-8/esp32/ldr");
 });
 
+/* REALTIME DATA */
 client.on("message", (topic, message) => {
+
     let msg = message.toString();
     let time = new Date().toLocaleTimeString();
 
-    if (labels.length > 10) {
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+
+        let val = parseFloat(msg);
+
+        document.getElementById("suhu").innerHTML = val + "°C";
+
+        suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+        cekSuhuAlert(val);
+    }
+
+    if (topic.includes("kelembaban")) {
+
+        document.getElementById("hum").innerHTML = msg + "%";
+
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+
+        document.getElementById("ldr").innerHTML = msg;
+
+        ldrData.push(parseFloat(msg));
+    }
+
+    if (labels.length > MAX_DATA) {
+
         labels.shift();
         suhuData.shift();
         humData.shift();
         ldrData.shift();
     }
 
-    labels.push(time);
-
-    if (topic.includes("suhu")) {
-        let val = parseFloat(msg);
-        document.getElementById("suhu").innerHTML = val + "°C";
-        suhuData.push(val);
-        updateChartGlow(val);
-    }
-
-    if (topic.includes("kelembaban")) {
-        document.getElementById("hum").innerHTML = msg + "%";
-        humData.push(parseFloat(msg));
-    }
-
-    if (topic.includes("ldr")) {
-        document.getElementById("ldr").innerHTML = msg;
-        ldrData.push(parseFloat(msg));
-    }
-
     chart.update();
 });
 
+/* CONTROL */
 function sendCmd(cmd) {
-    client.publish("smkn2klaten/kel-8/esp32/control", cmd);
+
+    client.publish(
+        "smkn2klaten/kel-8/esp32/control",
+        cmd
+    );
 }
 
 function resetAll() {
-    client.publish("smkn2klaten/kel-8/esp32/control","R1:0#R2:0#R3:0#R4:0");
+
+    client.publish(
+        "smkn2klaten/kel-8/esp32/control",
+        "R1:0#R2:0#R3:0#R4:0"
+    );
 }
 
-</script>
-
-    <!-- TAMBAHAN SCRIPT (letakkan DI BAWAH script kamu, jangan ubah kode awal) -->
-
-<script>
-
-/* 🔥 WARNA GARIS DINAMIS */
-function updateChartColor(suhu) {
-    let color;
-
-    if (suhu >= 20 && suhu <= 25) {
-        color = "lime";
-    } else if (suhu >= 26 && suhu <= 30) {
-        color = "yellow";
-    } else if (suhu >= 31) {
-        color = "red";
-    } else {
-        color = "white";
-    }
-
-    chart.data.datasets[0].borderColor = color;
-    chart.data.datasets[0].backgroundColor = color;
-
-    chart.update();
-}
-
-/* 🔥 OVERRIDE MESSAGE HANDLER TANPA MENGUBAH KODE AWAL */
-const oldMessageHandler = client.listeners("message")[0];
-
-client.removeAllListeners("message");
-
-client.on("message", (topic, message) => {
-    let msg = message.toString();
-    let time = new Date().toLocaleTimeString();
-
-    if (labels.length > 10) {
-        labels.shift();
-        suhuData.shift();
-        humData.shift();
-        ldrData.shift();
-    }
-
-    labels.push(time);
-
-    if (topic.includes("suhu")) {
-        let val = parseFloat(msg);
-        document.getElementById("suhu").innerHTML = val + "°C";
-        suhuData.push(val);
-
-        updateChartGlow(val);   // glow chart
-        updateChartColor(val);  // 🔥 warna garis ikut berubah
-    }
-
-    if (topic.includes("kelembaban")) {
-        document.getElementById("hum").innerHTML = msg + "%";
-        humData.push(parseFloat(msg));
-    }
-
-    if (topic.includes("ldr")) {
-        document.getElementById("ldr").innerHTML = msg;
-        ldrData.push(parseFloat(msg));
-    }
-
-    chart.update();
-});
-
-</script>
-
-    <script>
-
-/* 🔔 MINTA IZIN NOTIFIKASI */
-if (Notification.permission !== "granted") {
-    Notification.requestPermission();
-}
-
-/* 🔊 SOUND ALERT */
-function playAlertSound() {
-    const audio = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
-    audio.play();
-}
-
-/* 🔥 NOTIFIKASI SUHU */
-let lastAlert = 0;
-
-function cekSuhuAlert(suhu) {
-    let now = Date.now();
-
-    if (suhu >= 31 && now - lastAlert > 10000) { // delay 10 detik biar gak spam
-        lastAlert = now;
-
-        // popup notif
-        if (Notification.permission === "granted") {
-            new Notification("🔥 SUHU TINGGI!", {
-                body: "Suhu mencapai " + suhu + "°C",
-                icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
-            });
-        }
-
-        // bunyi
-        playAlertSound();
-    }
-}
-
-/* 🔥 SUNTIK KE DATA SUHU TANPA UBAH KODE AWAL */
-const oldMsgHandler = client.listeners("message")[0];
-client.removeAllListeners("message");
-
-client.on("message", (topic, message) => {
-    let msg = message.toString();
-    let time = new Date().toLocaleTimeString();
-
-    if (labels.length > 10) {
-        labels.shift();
-        suhuData.shift();
-        humData.shift();
-        ldrData.shift();
-    }
-
-    labels.push(time);
-
-    if (topic.includes("suhu")) {
-        let val = parseFloat(msg);
-        document.getElementById("suhu").innerHTML = val + "°C";
-        suhuData.push(val);
-
-        updateChartGlow(val);
-        updateChartColor(val);
-
-        cekSuhuAlert(val); // 🔥 notif aktif di sini
-    }
-
-    if (topic.includes("kelembaban")) {
-        document.getElementById("hum").innerHTML = msg + "%";
-        humData.push(parseFloat(msg));
-    }
-
-    if (topic.includes("ldr")) {
-        document.getElementById("ldr").innerHTML = msg;
-        ldrData.push(parseFloat(msg));
-    }
-
-    chart.update();
-});
-
-</script>
-
-    <script>
-
-/* 🔥 SMOOTH CHART ANIMATION */
-chart.options.animation = {
-    duration: 800,   // lama animasi (ms)
-    easing: 'easeInOutQuart'
-};
-
-chart.options.elements = {
-    line: {
-        tension: 0.4   // bikin garis jadi melengkung halus
-    },
-    point: {
-        radius: 3,
-        hoverRadius: 6
-    }
-};
-
-chart.options.transitions = {
-    active: {
-        animation: {
-            duration: 400
-        }
-    }
-};
-
-chart.update();
-
-</script>
-
-    <script>
-
-/* =========================
-   🔥 1. REALTIME SMOOTH UPDATE
-========================= */
-let smoothTimer = null;
-
-function smoothUpdateChart() {
-    if (smoothTimer) cancelAnimationFrame(smoothTimer);
-
-    function animate() {
-        chart.update('none'); // update tanpa flicker
-        smoothTimer = requestAnimationFrame(animate);
-    }
-
-    animate();
-
-    // stop setelah 500ms biar hemat
-    setTimeout(() => {
-        cancelAnimationFrame(smoothTimer);
-    }, 500);
-}
-
-
-/* =========================
-   🔥 2. TRAIL EFFECT (JEJAK GARIS)
-========================= */
+/* TRAIL EFFECT */
 const originalDraw = chart.draw;
 
 chart.draw = function() {
-    const ctx = this.ctx;
 
-    ctx.save();
-    ctx.shadowColor = chart.data.datasets[0].borderColor || "lime";
-    ctx.shadowBlur = 15;   // kekuatan glow
-    ctx.lineWidth = 2;
+    const c = this.ctx;
+
+    c.save();
+
+    c.shadowColor =
+        chart.data.datasets[0].borderColor || "lime";
+
+    c.shadowBlur = 15;
+
+    c.lineWidth = 2;
 
     originalDraw.apply(this, arguments);
 
-    ctx.restore();
+    c.restore();
 };
-
-
-/* =========================
-   🔥 SUNTIK TANPA UBAH KODE AWAL
-========================= */
-const oldHandler = client.listeners("message")[0];
-client.removeAllListeners("message");
-
-client.on("message", (topic, message) => {
-    let msg = message.toString();
-    let time = new Date().toLocaleTimeString();
-
-    if (labels.length > 10) {
-        labels.shift();
-        suhuData.shift();
-        humData.shift();
-        ldrData.shift();
-    }
-
-    labels.push(time);
-
-    if (topic.includes("suhu")) {
-        let val = parseFloat(msg);
-        document.getElementById("suhu").innerHTML = val + "°C";
-        suhuData.push(val);
-
-        updateChartGlow(val);
-        updateChartColor(val);
-        cekSuhuAlert(val);
-    }
-
-    if (topic.includes("kelembaban")) {
-        document.getElementById("hum").innerHTML = msg + "%";
-        humData.push(parseFloat(msg));
-    }
-
-    if (topic.includes("ldr")) {
-        document.getElementById("ldr").innerHTML = msg;
-        ldrData.push(parseFloat(msg));
-    }
-
-    smoothUpdateChart(); // 🔥 pake smooth update, bukan langsung update
-});
-
-</script>
-
-    <script>
-
-/* =========================
-   🔥 AUTO SCROLL WINDOW DATA
-========================= */
-const MAX_DATA = 50; // jumlah titik yang tampil
-
-function autoScroll() {
-    if (labels.length > MAX_DATA) {
-        labels.shift();
-        suhuData.shift();
-        humData.shift();
-        ldrData.shift();
-    }
-}
-
-
-/* =========================
-   🔥 ANIMASI SCROLL HALUS
-========================= */
-chart.options.animation = {
-    duration: 600,
-    easing: 'linear'
-};
-
-chart.options.elements = {
-    line: {
-        tension: 0.35
-    }
-};
-
-
-/* =========================
-   🔥 OVERRIDE MESSAGE (TANPA UBAH KODE AWAL)
-========================= */
-const oldHandlerScroll = client.listeners("message")[0];
-client.removeAllListeners("message");
-
-client.on("message", (topic, message) => {
-    let msg = message.toString();
-    let time = new Date().toLocaleTimeString();
-
-    labels.push(time);
-
-    if (topic.includes("suhu")) {
-        let val = parseFloat(msg);
-        document.getElementById("suhu").innerHTML = val + "°C";
-        suhuData.push(val);
-
-        updateChartGlow(val);
-        updateChartColor(val);
-        cekSuhuAlert(val);
-    }
-
-    if (topic.includes("kelembaban")) {
-        document.getElementById("hum").innerHTML = msg + "%";
-        humData.push(parseFloat(msg));
-    }
-
-    if (topic.includes("ldr")) {
-        document.getElementById("ldr").innerHTML = msg;
-        ldrData.push(parseFloat(msg));
-    }
-
-    autoScroll();   // 🔥 geser data otomatis
-    chart.update(); // update chart
-});
 
 </script>
 
