@@ -83,7 +83,6 @@ body::before {
     font-weight: bold;
 }
 
-/* CARD */
 .card {
     position: relative;
     background: rgba(255,255,255,0.08);
@@ -99,28 +98,10 @@ body::before {
     transition: 0.3s;
 }
 
-.card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 18px;
-    background: linear-gradient(
-        120deg,
-        rgba(255,255,255,0.15),
-        transparent 40%
-    );
-    opacity: 0.4;
-}
-
 .card:hover {
     transform: translateY(-5px);
-    box-shadow:
-        inset 0 0 12px rgba(255,255,255,0.08),
-        0 0 20px rgba(0,255,200,0.4),
-        0 0 40px rgba(0,255,200,0.2);
 }
 
-/* BUTTON */
 button {
     position: relative;
     padding: 10px;
@@ -134,7 +115,6 @@ button {
     transition: 0.3s;
 }
 
-/* WARNA */
 .manual {
     background: linear-gradient(145deg, #ff9800, #ff6f00);
 }
@@ -155,7 +135,6 @@ button:hover {
     transform: scale(1.07);
 }
 
-/* GLOSSY SHINE */
 button::before {
     content: "";
     position: absolute;
@@ -177,38 +156,6 @@ button:hover::before {
     transition: 0.6s;
 }
 
-/* RIPPLE */
-button::after {
-    content: "";
-    position: absolute;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0;
-}
-
-.manual::after {
-    background: rgba(255,165,0,0.6);
-}
-
-.auto::after {
-    background: rgba(0,255,120,0.6);
-}
-
-.reset::after {
-    background: rgba(255,0,0,0.6);
-}
-
-button:active::after {
-    width: 120px;
-    height: 120px;
-    opacity: 1;
-}
-
-/* RGB RESET */
 @keyframes rgbGlow {
     0% { box-shadow: 0 0 10px red; }
     50% { box-shadow: 0 0 20px cyan; }
@@ -219,7 +166,6 @@ button:active::after {
     animation: rgbGlow 2s linear infinite;
 }
 
-/* CHART */
 canvas {
     margin-top: 10px;
     transition: 0.3s;
@@ -238,12 +184,9 @@ canvas {
     flex-wrap: wrap;
 }
 
-/* STATUS SUHU */
 .temp-info {
     margin-top: 15px;
-    font-size: 15px;
-    font-weight: bold;
-    text-align: center;
+    margin-bottom: 15px;
 }
 
 .temp-info span {
@@ -251,27 +194,24 @@ canvas {
     margin: 5px;
     padding: 8px 14px;
     border-radius: 10px;
+    font-weight: bold;
 }
 
 .hijau {
     background: rgba(0,255,0,0.2);
     color: lime;
-    border: 1px solid lime;
 }
 
 .kuning {
     background: rgba(255,255,0,0.2);
     color: yellow;
-    border: 1px solid yellow;
 }
 
 .merah {
     background: rgba(255,0,0,0.2);
     color: red;
-    border: 1px solid red;
 }
 
-/* RESPONSIVE */
 @media(max-width:768px){
 
     .layout-row{
@@ -331,6 +271,7 @@ canvas {
 </div>
 
 <div class="card" style="flex:1;">
+
 <h3>Manual Control</h3>
 
 <button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
@@ -352,6 +293,7 @@ canvas {
 </div>
 
 <div class="card">
+
 <h3>Mode</h3>
 
 <button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
@@ -379,9 +321,11 @@ const MAX_DATA = 50;
 const ctx = document.getElementById("chart");
 
 const chart = new Chart(ctx, {
+
     type: 'line',
 
     data: {
+
         labels: labels,
 
         datasets: [
@@ -427,6 +371,15 @@ const chart = new Chart(ctx, {
             easing: 'easeInOutQuart'
         },
 
+        plugins: {
+
+            legend: {
+                labels: {
+                    color: "white"
+                }
+            }
+        },
+
         scales: {
 
             x: {
@@ -440,20 +393,11 @@ const chart = new Chart(ctx, {
                     color: "white"
                 }
             }
-        },
-
-        plugins: {
-
-            legend: {
-                labels: {
-                    color: "white"
-                }
-            }
         }
     }
 });
 
-/* CHART GLOW */
+/* GLOW */
 function updateChartGlow(suhu) {
 
     if (suhu >= 20 && suhu <= 25) {
@@ -496,6 +440,7 @@ if (Notification.permission !== "granted") {
 }
 
 function playAlertSound() {
+
     const audio = new Audio(
         "https://www.soundjay.com/buttons/sounds/beep-07.mp3"
     );
@@ -534,20 +479,35 @@ client.on("connect", () => {
     document.getElementById("status").innerHTML = "● Online";
     document.getElementById("status").className = "status online";
 
+    subscribeTopics();
+});
+
+/* AUTO RECONNECT */
+client.on("reconnect", () => {
+
+    console.log("Reconnect MQTT...");
+
+    subscribeTopics();
+});
+
+function subscribeTopics(){
+
     client.subscribe("smkn2klaten/kel-8/esp32/suhu");
     client.subscribe("smkn2klaten/kel-8/esp32/kelembaban");
     client.subscribe("smkn2klaten/kel-8/esp32/ldr");
-});
+}
 
 /* REALTIME DATA */
 client.on("message", (topic, message) => {
 
     let msg = message.toString();
-    let time = new Date().toLocaleTimeString();
 
-    labels.push(time);
-
+    /* SUHU */
     if (topic.includes("suhu")) {
+
+        let time = new Date().toLocaleTimeString();
+
+        labels.push(time);
 
         let val = parseFloat(msg);
 
@@ -560,26 +520,38 @@ client.on("message", (topic, message) => {
         cekSuhuAlert(val);
     }
 
+    /* KELEMBABAN */
     if (topic.includes("kelembaban")) {
 
         document.getElementById("hum").innerHTML = msg + "%";
 
         humData.push(parseFloat(msg));
+
+        while(humData.length < suhuData.length){
+            humData.unshift(null);
+        }
     }
 
+    /* LDR */
     if (topic.includes("ldr")) {
 
         document.getElementById("ldr").innerHTML = msg;
 
         ldrData.push(parseFloat(msg));
+
+        while(ldrData.length < suhuData.length){
+            ldrData.unshift(null);
+        }
     }
 
+    /* BATASI DATA */
     if (labels.length > MAX_DATA) {
 
         labels.shift();
-        suhuData.shift();
-        humData.shift();
-        ldrData.shift();
+
+        if (suhuData.length > MAX_DATA) suhuData.shift();
+        if (humData.length > MAX_DATA) humData.shift();
+        if (ldrData.length > MAX_DATA) ldrData.shift();
     }
 
     chart.update();
