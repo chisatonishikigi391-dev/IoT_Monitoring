@@ -411,5 +411,113 @@ client.on("message", (topic, message) => {
 
 </script>
 
+    <script>
+
+/* 🔔 MINTA IZIN NOTIFIKASI */
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+/* 🔊 SOUND ALERT */
+function playAlertSound() {
+    const audio = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
+    audio.play();
+}
+
+/* 🔥 NOTIFIKASI SUHU */
+let lastAlert = 0;
+
+function cekSuhuAlert(suhu) {
+    let now = Date.now();
+
+    if (suhu >= 31 && now - lastAlert > 10000) { // delay 10 detik biar gak spam
+        lastAlert = now;
+
+        // popup notif
+        if (Notification.permission === "granted") {
+            new Notification("🔥 SUHU TINGGI!", {
+                body: "Suhu mencapai " + suhu + "°C",
+                icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
+            });
+        }
+
+        // bunyi
+        playAlertSound();
+    }
+}
+
+/* 🔥 SUNTIK KE DATA SUHU TANPA UBAH KODE AWAL */
+const oldMsgHandler = client.listeners("message")[0];
+client.removeAllListeners("message");
+
+client.on("message", (topic, message) => {
+    let msg = message.toString();
+    let time = new Date().toLocaleTimeString();
+
+    if (labels.length > 10) {
+        labels.shift();
+        suhuData.shift();
+        humData.shift();
+        ldrData.shift();
+    }
+
+    labels.push(time);
+
+    if (topic.includes("suhu")) {
+        let val = parseFloat(msg);
+        document.getElementById("suhu").innerHTML = val + "°C";
+        suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+
+        cekSuhuAlert(val); // 🔥 notif aktif di sini
+    }
+
+    if (topic.includes("kelembaban")) {
+        document.getElementById("hum").innerHTML = msg + "%";
+        humData.push(parseFloat(msg));
+    }
+
+    if (topic.includes("ldr")) {
+        document.getElementById("ldr").innerHTML = msg;
+        ldrData.push(parseFloat(msg));
+    }
+
+    chart.update();
+});
+
+</script>
+
+    <script>
+
+/* 🔥 SMOOTH CHART ANIMATION */
+chart.options.animation = {
+    duration: 800,   // lama animasi (ms)
+    easing: 'easeInOutQuart'
+};
+
+chart.options.elements = {
+    line: {
+        tension: 0.4   // bikin garis jadi melengkung halus
+    },
+    point: {
+        radius: 3,
+        hoverRadius: 6
+    }
+};
+
+chart.options.transitions = {
+    active: {
+        animation: {
+            duration: 400
+        }
+    }
+};
+
+chart.update();
+
+</script>
+
 </body>
 </html>
