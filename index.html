@@ -213,9 +213,18 @@ canvas {
 }
 
 @media(max-width:768px){
-    .layout-row{ flex-direction:column; }
-    .card button{ width:100%; }
-    .sensor-row{ flex-direction:column; }
+
+    .layout-row{
+        flex-direction:column;
+    }
+
+    .card button{
+        width:100%;
+    }
+
+    .sensor-row{
+        flex-direction:column;
+    }
 }
 
 </style>
@@ -262,6 +271,7 @@ canvas {
 </div>
 
 <div class="card" style="flex:1;">
+
 <h3>Manual Control</h3>
 
 <button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
@@ -277,14 +287,18 @@ canvas {
 <button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
 
 <button class="reset rgb" onclick="resetAll()">RESET</button>
+
 </div>
 
 </div>
 
 <div class="card">
+
 <h3>Mode</h3>
+
 <button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
 <button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
+
 </div>
 
 </div>
@@ -306,39 +320,284 @@ const MAX_DATA = 50;
 
 const ctx = document.getElementById("chart");
 
-const chart = new Chart(ctx, { /* (tidak diubah) */ });
+const chart = new Chart(ctx, {
 
-/* ✅ TAMBAHAN */
-function updateSuhuColor(suhu){
-    let el = document.getElementById("suhu");
+    type: 'line',
 
-    if (suhu >= 20 && suhu <= 25) el.style.color = "lime";
-    else if (suhu >= 26 && suhu <= 30) el.style.color = "yellow";
-    else if (suhu >= 31) el.style.color = "red";
-    else el.style.color = "white";
+    data: {
+
+        labels: labels,
+
+        datasets: [
+
+            {
+                label: 'Suhu',
+                data: suhuData,
+                borderWidth: 3,
+                borderColor: "lime",
+                backgroundColor: "lime",
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6
+            },
+
+            {
+                label: 'Kelembapan',
+                data: humData,
+                borderWidth: 2,
+                borderColor: "cyan",
+                backgroundColor: "cyan",
+                tension: 0.4
+            },
+
+            {
+                label: 'Cahaya',
+                data: ldrData,
+                borderWidth: 2,
+                borderColor: "orange",
+                backgroundColor: "orange",
+                tension: 0.4
+            }
+
+        ]
+    },
+
+    options: {
+
+        responsive: true,
+
+        animation: {
+            duration: 700,
+            easing: 'easeInOutQuart'
+        },
+
+        plugins: {
+
+            legend: {
+                labels: {
+                    color: "white"
+                }
+            }
+        },
+
+        scales: {
+
+            x: {
+                ticks: {
+                    color: "white"
+                }
+            },
+
+            y: {
+                ticks: {
+                    color: "white"
+                }
+            }
+        }
+    }
+});
+
+/* GLOW */
+function updateChartGlow(suhu) {
+
+    if (suhu >= 20 && suhu <= 25) {
+        ctx.style.boxShadow = "0 0 20px lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        ctx.style.boxShadow = "0 0 25px yellow";
+    }
+
+    else if (suhu >= 31) {
+        ctx.style.boxShadow = "0 0 30px red";
+    }
 }
 
-/* MQTT */
+/* WARNA GARIS */
+function updateChartColor(suhu) {
+
+    let color = "white";
+
+    if (suhu >= 20 && suhu <= 25) {
+        color = "lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        color = "yellow";
+    }
+
+    else if (suhu >= 31) {
+        color = "red";
+    }
+
+    chart.data.datasets[0].borderColor = color;
+    chart.data.datasets[0].backgroundColor = color;
+}
+
+/* NOTIFIKASI */
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+function playAlertSound() {
+
+    const audio = new Audio(
+        "https://www.soundjay.com/buttons/sounds/beep-07.mp3"
+    );
+
+    audio.play();
+}
+
+let lastAlert = 0;
+
+function cekSuhuAlert(suhu) {
+
+    let now = Date.now();
+
+    if (suhu >= 31 && now - lastAlert > 10000) {
+
+        lastAlert = now;
+
+        if (Notification.permission === "granted") {
+
+            new Notification("🔥 SUHU TINGGI!", {
+
+                body: "Suhu mencapai " + suhu + "°C",
+
+                icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
+
+            });
+        }
+
+        playAlertSound();
+    }
+}
+
+/* MQTT CONNECT */
+client.on("connect", () => {
+
+    document.getElementById("status").innerHTML = "● Online";
+    document.getElementById("status").className = "status online";
+
+    subscribeTopics();
+});
+
+/* AUTO RECONNECT */
+client.on("reconnect", () => {
+
+    console.log("Reconnect MQTT...");
+
+    subscribeTopics();
+});
+
+function subscribeTopics(){
+
+    client.subscribe("smkn2klaten/kel-8/esp32/suhu");
+    client.subscribe("smkn2klaten/kel-8/esp32/kelembaban");
+    client.subscribe("smkn2klaten/kel-8/esp32/ldr");
+}
+
+/* REALTIME DATA */
 client.on("message", (topic, message) => {
 
     let msg = message.toString();
 
+    /* SUHU */
     if (topic.includes("suhu")) {
 
         let time = new Date().toLocaleTimeString();
+
         labels.push(time);
 
         let val = parseFloat(msg);
 
         document.getElementById("suhu").innerHTML = val + "°C";
 
-        updateSuhuColor(val); // ✅ INI YANG DITAMBAHKAN
-
         suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+        cekSuhuAlert(val);
     }
+
+    /* KELEMBABAN */
+    if (topic.includes("kelembaban")) {
+
+        document.getElementById("hum").innerHTML = msg + "%";
+
+        humData.push(parseFloat(msg));
+
+        while(humData.length < suhuData.length){
+            humData.unshift(null);
+        }
+    }
+
+    /* LDR */
+    if (topic.includes("ldr")) {
+
+        document.getElementById("ldr").innerHTML = msg;
+
+        ldrData.push(parseFloat(msg));
+
+        while(ldrData.length < suhuData.length){
+            ldrData.unshift(null);
+        }
+    }
+
+    /* BATASI DATA */
+    if (labels.length > MAX_DATA) {
+
+        labels.shift();
+
+        if (suhuData.length > MAX_DATA) suhuData.shift();
+        if (humData.length > MAX_DATA) humData.shift();
+        if (ldrData.length > MAX_DATA) ldrData.shift();
+    }
+
+    chart.update();
 });
+
+/* CONTROL */
+function sendCmd(cmd) {
+
+    client.publish(
+        "smkn2klaten/kel-8/esp32/control",
+        cmd
+    );
+}
+
+function resetAll() {
+
+    client.publish(
+        "smkn2klaten/kel-8/esp32/control",
+        "R1:0#R2:0#R3:0#R4:0"
+    );
+}
+
+/* TRAIL EFFECT */
+const originalDraw = chart.draw;
+
+chart.draw = function() {
+
+    const c = this.ctx;
+
+    c.save();
+
+    c.shadowColor =
+        chart.data.datasets[0].borderColor || "lime";
+
+    c.shadowBlur = 15;
+
+    c.lineWidth = 2;
+
+    originalDraw.apply(this, arguments);
+
+    c.restore();
+};
 
 </script>
 
 </body>
 </html>
+
+langsung aja di gabung di jadiin final code tapi yang di ubah yang kusuruh aja
