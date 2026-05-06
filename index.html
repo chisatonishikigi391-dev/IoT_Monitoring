@@ -197,9 +197,35 @@ canvas {
     font-weight: bold;
 }
 
-.hijau { background: rgba(0,255,0,0.2); color: lime; }
-.kuning { background: rgba(255,255,0,0.2); color: yellow; }
-.merah { background: rgba(255,0,0,0.2); color: red; }
+.hijau {
+    background: rgba(0,255,0,0.2);
+    color: lime;
+}
+
+.kuning {
+    background: rgba(255,255,0,0.2);
+    color: yellow;
+}
+
+.merah {
+    background: rgba(255,0,0,0.2);
+    color: red;
+}
+
+@media(max-width:768px){
+
+    .layout-row{
+        flex-direction:column;
+    }
+
+    .card button{
+        width:100%;
+    }
+
+    .sensor-row{
+        flex-direction:column;
+    }
+}
 
 </style>
 </head>
@@ -237,69 +263,337 @@ canvas {
     <span class="merah">31°+ = MERAH</span>
 </div>
 
-<canvas id="chart"></canvas>
+<div class="layout-row">
 
+<div class="card" style="flex:1;">
+<h3>Grafik Sensor</h3>
+<canvas id="chart"></canvas>
+</div>
+
+<div class="card" style="flex:1;">
+
+<h3>Manual Control</h3>
+
+<button class="manual" onclick="sendCmd('R1:1')">R1 ON</button>
+<button class="manual" onclick="sendCmd('R1:0')">R1 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R2:1')">R2 ON</button>
+<button class="manual" onclick="sendCmd('R2:0')">R2 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R3:1')">R3 ON</button>
+<button class="manual" onclick="sendCmd('R3:0')">R3 OFF</button><br>
+
+<button class="manual" onclick="sendCmd('R4:1')">R4 ON</button>
+<button class="manual" onclick="sendCmd('R4:0')">R4 OFF</button><br>
+
+<button class="reset rgb" onclick="resetAll()">RESET</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>Mode</h3>
+
+<button class="auto" onclick="sendCmd('MODE:SUHU')">AUTO</button>
+<button class="manual" onclick="sendCmd('MODE:BUTTON')">MANUAL</button>
+
+</div>
+
+</div>
+
+<div class="footer">
+© 2026 IoT Monitoring/LiHaDa.id
 </div>
 
 <script>
 
 const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt");
 
-let suhuData = [];
 let labels = [];
+let suhuData = [];
+let humData = [];
+let ldrData = [];
 
-const chart = new Chart(document.getElementById("chart"), {
+const MAX_DATA = 50;
+
+const ctx = document.getElementById("chart");
+
+const chart = new Chart(ctx, {
+
     type: 'line',
+
     data: {
+
         labels: labels,
-        datasets: [{
-            label: 'Suhu',
-            data: suhuData,
-            borderColor: 'lime'
-        }]
+
+        datasets: [
+
+            {
+                label: 'Suhu',
+                data: suhuData,
+                borderWidth: 3,
+                borderColor: "lime",
+                backgroundColor: "lime",
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6
+            },
+
+            {
+                label: 'Kelembapan',
+                data: humData,
+                borderWidth: 2,
+                borderColor: "cyan",
+                backgroundColor: "cyan",
+                tension: 0.4
+            },
+
+            {
+                label: 'Cahaya',
+                data: ldrData,
+                borderWidth: 2,
+                borderColor: "orange",
+                backgroundColor: "orange",
+                tension: 0.4
+            }
+
+        ]
+    },
+
+    options: {
+
+        responsive: true,
+
+        animation: {
+            duration: 700,
+            easing: 'easeInOutQuart'
+        },
+
+        plugins: {
+
+            legend: {
+                labels: {
+                    color: "white"
+                }
+            }
+        },
+
+        scales: {
+
+            x: {
+                ticks: {
+                    color: "white"
+                }
+            },
+
+            y: {
+                ticks: {
+                    color: "white"
+                }
+            }
+        }
     }
 });
 
+/* GLOW */
+function updateChartGlow(suhu) {
+
+    if (suhu >= 20 && suhu <= 25) {
+        ctx.style.boxShadow = "0 0 20px lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        ctx.style.boxShadow = "0 0 25px yellow";
+    }
+
+    else if (suhu >= 31) {
+        ctx.style.boxShadow = "0 0 30px red";
+    }
+}
+
+/* WARNA GARIS */
+function updateChartColor(suhu) {
+
+    let color = "white";
+
+    if (suhu >= 20 && suhu <= 25) {
+        color = "lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        color = "yellow";
+    }
+
+    else if (suhu >= 31) {
+        color = "red";
+    }
+
+    chart.data.datasets[0].borderColor = color;
+    chart.data.datasets[0].backgroundColor = color;
+}
+
+/* NOTIFIKASI */
+if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+function playAlertSound() {
+
+    const audio = new Audio(
+        "https://www.soundjay.com/buttons/sounds/beep-07.mp3"
+    );
+
+    audio.play();
+}
+
+let lastAlert = 0;
+
+function cekSuhuAlert(suhu) {
+
+    let now = Date.now();
+
+    if (suhu >= 31 && now - lastAlert > 10000) {
+
+        lastAlert = now;
+
+        if (Notification.permission === "granted") {
+
+            new Notification("🔥 SUHU TINGGI!", {
+
+                body: "Suhu mencapai " + suhu + "°C",
+
+                icon: "https://cdn-icons-png.flaticon.com/512/1684/1684375.png"
+
+            });
+        }
+
+        playAlertSound();
+    }
+}
+
+/* MQTT CONNECT */
 client.on("connect", () => {
+
     document.getElementById("status").innerHTML = "● Online";
     document.getElementById("status").className = "status online";
 
-    client.subscribe("smkn2klaten/kel-8/esp32/suhu");
+    subscribeTopics();
 });
 
+/* AUTO RECONNECT */
+client.on("reconnect", () => {
+
+    console.log("Reconnect MQTT...");
+
+    subscribeTopics();
+});
+
+function subscribeTopics(){
+
+    client.subscribe("smkn2klaten/kel-8/esp32/suhu");
+    client.subscribe("smkn2klaten/kel-8/esp32/kelembaban");
+    client.subscribe("smkn2klaten/kel-8/esp32/ldr");
+}
+
+/* REALTIME DATA */
 client.on("message", (topic, message) => {
 
-    let val = parseFloat(message.toString());
+    let msg = message.toString();
 
-    /* 🔥 SUHU + KATEGORI */
-    let statusSuhu = "";
-    let warna = "white";
+    /* SUHU */
+    if (topic.includes("suhu")) {
 
-    if (val >= 20 && val <= 25) {
-        statusSuhu = "HIJAU";
-        warna = "lime";
-    } 
-    else if (val >= 26 && val <= 30) {
-        statusSuhu = "KUNING";
-        warna = "yellow";
-    } 
-    else if (val >= 31) {
-        statusSuhu = "MERAH";
-        warna = "red";
-    } 
-    else {
-        statusSuhu = "DINGIN";
-        warna = "cyan";
+        let time = new Date().toLocaleTimeString();
+
+        labels.push(time);
+
+        let val = parseFloat(msg);
+
+        document.getElementById("suhu").innerHTML = val + "°C";
+
+        suhuData.push(val);
+
+        updateChartGlow(val);
+        updateChartColor(val);
+        cekSuhuAlert(val);
     }
 
-    document.getElementById("suhu").innerHTML =
-        val + "°C<br><span style='color:" + warna + "'>" + statusSuhu + "</span>";
+    /* KELEMBABAN */
+    if (topic.includes("kelembaban")) {
 
-    labels.push(new Date().toLocaleTimeString());
-    suhuData.push(val);
+        document.getElementById("hum").innerHTML = msg + "%";
+
+        humData.push(parseFloat(msg));
+
+        while(humData.length < suhuData.length){
+            humData.unshift(null);
+        }
+    }
+
+    /* LDR */
+    if (topic.includes("ldr")) {
+
+        document.getElementById("ldr").innerHTML = msg;
+
+        ldrData.push(parseFloat(msg));
+
+        while(ldrData.length < suhuData.length){
+            ldrData.unshift(null);
+        }
+    }
+
+    /* BATASI DATA */
+    if (labels.length > MAX_DATA) {
+
+        labels.shift();
+
+        if (suhuData.length > MAX_DATA) suhuData.shift();
+        if (humData.length > MAX_DATA) humData.shift();
+        if (ldrData.length > MAX_DATA) ldrData.shift();
+    }
 
     chart.update();
 });
+
+/* CONTROL */
+function sendCmd(cmd) {
+
+    client.publish(
+        "smkn2klaten/kel-8/esp32/control",
+        cmd
+    );
+}
+
+function resetAll() {
+
+    client.publish(
+        "smkn2klaten/kel-8/esp32/control",
+        "R1:0#R2:0#R3:0#R4:0"
+    );
+}
+
+/* TRAIL EFFECT */
+const originalDraw = chart.draw;
+
+chart.draw = function() {
+
+    const c = this.ctx;
+
+    c.save();
+
+    c.shadowColor =
+        chart.data.datasets[0].borderColor || "lime";
+
+    c.shadowBlur = 15;
+
+    c.lineWidth = 2;
+
+    originalDraw.apply(this, arguments);
+
+    c.restore();
+};
 
 </script>
 
