@@ -434,6 +434,28 @@ function updateChartColor(suhu) {
     chart.data.datasets[0].backgroundColor = color;
 }
 
+/* WARNA TEKS SUHU */
+function updateSuhuColor(suhu) {
+
+    let suhuEl = document.getElementById("suhu");
+
+    if (suhu >= 20 && suhu <= 25) {
+        suhuEl.style.color = "lime";
+    }
+
+    else if (suhu >= 26 && suhu <= 30) {
+        suhuEl.style.color = "yellow";
+    }
+
+    else if (suhu >= 31) {
+        suhuEl.style.color = "red";
+    }
+
+    else {
+        suhuEl.style.color = "white";
+    }
+}
+
 /* NOTIFIKASI */
 if (Notification.permission !== "granted") {
     Notification.requestPermission();
@@ -517,6 +539,7 @@ client.on("message", (topic, message) => {
 
         updateChartGlow(val);
         updateChartColor(val);
+        updateSuhuColor(val);  /* ← TAMBAHAN BARU */
         cekSuhuAlert(val);
     }
 
