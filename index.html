@@ -400,7 +400,7 @@ const chart = new Chart(ctx, {
 /* GLOW */
 function updateChartGlow(suhu) {
 
-    if (suhu >= 20 && suhu <= 25) {
+    if (suhu >= 0 && suhu <= 25) {
         ctx.style.boxShadow = "0 0 20px lime";
     }
 
@@ -408,7 +408,7 @@ function updateChartGlow(suhu) {
         ctx.style.boxShadow = "0 0 25px yellow";
     }
 
-    else if (suhu >= 31) {
+    else if (suhu >= 30) {
         ctx.style.boxShadow = "0 0 30px red";
     }
 }
@@ -418,7 +418,7 @@ function updateChartColor(suhu) {
 
     let color = "white";
 
-    if (suhu >= 20 && suhu <= 25) {
+    if (suhu >= 0 && suhu <= 25) {
         color = "lime";
     }
 
@@ -426,7 +426,7 @@ function updateChartColor(suhu) {
         color = "yellow";
     }
 
-    else if (suhu >= 31) {
+    else if (suhu >= 30) {
         color = "red";
     }
 
@@ -439,7 +439,7 @@ function updateSuhuColor(suhu) {
 
     let suhuEl = document.getElementById("suhu");
 
-    if (suhu >= 20 && suhu <= 25) {
+    if (suhu >= 0 && suhu <= 25) {
         suhuEl.style.color = "lime";
     }
 
@@ -447,7 +447,7 @@ function updateSuhuColor(suhu) {
         suhuEl.style.color = "yellow";
     }
 
-    else if (suhu >= 31) {
+    else if (suhu >= 30) {
         suhuEl.style.color = "red";
     }
 
