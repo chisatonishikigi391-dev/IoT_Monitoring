@@ -533,14 +533,14 @@ client.on("message", (topic, message) => {
 
         let val = parseFloat(msg);
 
-        document.getElementById("suhu").innerHTML = val + "°C";
-
         suhuData.push(val);
 
         updateChartGlow(val);
         updateChartColor(val);
-        updateSuhuColor(val);  /* ← TAMBAHAN BARU */
         cekSuhuAlert(val);
+
+        document.getElementById("suhu").innerHTML = val + "°C";
+        updateSuhuColor(val);
     }
 
     /* KELEMBABAN */
