@@ -404,7 +404,7 @@ function updateChartGlow(suhu) {
         ctx.style.boxShadow = "0 0 20px lime";
     }
 
-    else if (suhu >= 26 && suhu <= 30) {
+    else if (suhu >= 26 && suhu < 29.9) {
         ctx.style.boxShadow = "0 0 25px yellow";
     }
 
@@ -422,7 +422,7 @@ function updateChartColor(suhu) {
         color = "lime";
     }
 
-    else if (suhu >= 26 && suhu <= 30) {
+    else if (suhu >= 26 && suhu < 29.9) {
         color = "yellow";
     }
 
@@ -443,7 +443,7 @@ function updateSuhuColor(suhu) {
         suhuEl.style.color = "lime";
     }
 
-    else if (suhu >= 26 && suhu <= 30) {
+    else if (suhu >= 26 && suhu <= 29.9) {
         suhuEl.style.color = "yellow";
     }
 
